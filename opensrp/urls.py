@@ -40,7 +40,7 @@ urlpatterns = patterns('',
     url(r'^savepassword/$', 'Masters.views.save_password',name='savepassword'),
     url(r'^resetpassword/$', 'Masters.views.resetpassword',name='resetpassword'),
     url(r'^sendsms/$', 'Masters.views.send_sms',name='send_sms'),
-    url(r'^docoverview/$', 'Masters.views.doctor_overview',name='send_sms'),
+    url(r'^docoverview/$', 'Masters.views.doctor_overview',name='doctor_overview'),
     url(r'^chaining/', include('smart_selects.urls')),
 
 )

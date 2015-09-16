@@ -48,7 +48,7 @@ def poc_update(request):
         docid=request.GET.get("doctorid","")
         pending =request.GET.get("pending","")
         patientph =str(request.GET.get("patientph",""))
-
+        patientname =str(request.GET.get("patientname",""))
     elif request.method =="POST":
         document_id=request.POST.get("docid","")
         poc_info=request.POST.get("pocinfo","")
@@ -60,8 +60,10 @@ def poc_update(request):
     poc_details = json.loads(poc_info)
     poc = []
     poc_data = {}
+    server_version = int(round(time.time() * 1000))
     poc_data['pending']=pending
     poc_data['poc'] = str(poc_info)
+    poc_data['server_version'] = server_version
     poc_backup_data = json.dumps(poc_data)
     #Getting old poc and will update that with present value at the end
     visit_backup = PocBackup.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).values_list('poc','id')
@@ -100,7 +102,7 @@ def poc_update(request):
     result["formInstance"]=form_ins["formInstance"]
     result["formName"]=str(form_ins["formName"])
     result["instanceId"]=str(form_ins["instanceId"])
-    result["serverVersion"]=int(round(time.time() * 1000))
+    result["serverVersion"]=server_version
     result["type"]=str(form_ins["type"])
     ord_result = json.dumps(result)
     poc_doc_update_curl = "curl -vX PUT http://202.153.34.169:5984/drishti-form/%s -d '''%s'''" %(str(document_id),ord_result)
@@ -111,36 +113,37 @@ def poc_update(request):
     #Updating backup table with latest poc/pending status info
     visit_info = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).values_list('visitentityid','entityidec')
     if len(pending)==0:
-        anm_sms,patient_sms = docsms(anmId,patientph,poc_details)
+        anm_details = UserMasters.objects.filter(user_id=str(anmId)).values_list('phone_number','country')
+        anm_country = str(anm_details[0][1])
+        anm_phone = str(anm_details[0][0])
+        patient_sms = "Dear %s your prescription " %patientname
+        if len(poc_details["investigations"]) > 0:
+            patient_sms+=" Investigations: "
+            for investigation in poc_details["investigations"]:
+                patient_sms = patient_sms+investigation
+        if len(poc_details["drugs"]) > 0:
+            patient_sms+=" drugs: "
+            for drugs in poc_details["drugs"]:
+                patient_sms = patient_sms+drugs["drugName"]+drugs["direction"]+drugs["frequency"]+drugs["drugQty"]+drugs["drugNoOfDays"]
+        if len(poc_details["diagnosis"]) > 0:
+            patient_sms+=" diagnosis: "
+            for diagnosis in poc_details["diagnosis"]:
+                patient_sms = patient_sms+diagnosis
+        anm_sms = "POC is given for %s on" %patientname
+        anm_sms+=datetime.now().strftime('%d-%b-%Y %H:%M:%S')
+        country_code= str(CountryTb.objects.filter(country_name=str(anm_country)).values_list('country_code')[0][0])
+        anm_phone = country_code+anm_phone[-int(settings.PHONE_NUMBER_LENGTH):]
+        patient_phone = country_code+patientph[-int(settings.PHONE_NUMBER_LENGTH):]
+        anm_sms,patient_sms = docsms(workerph=anm_phone,patientph=patient_phone,worker_sms=anm_sms,patientsms=patient_sms)
         del_poc = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).delete()
     return HttpResponse(json.dumps({"status":"success"}))
 
-def docsms(anmId,patientph,poc_details):
-    patient_sms = "Dear patient your prescription "
-    if len(poc_details["investigations"]) > 0:
-        patient_sms+=" Investigations: "
-        for investigation in poc_details["investigations"]:
-            patient_sms = patient_sms+investigation
-    if len(poc_details["drugs"]) > 0:
-        patient_sms+=" drugs: "
-        for drugs in poc_details["drugs"]:
-            patient_sms = patient_sms+drugs["drugName"]+drugs["direction"]+drugs["frequency"]+drugs["drugQty"]+drugs["drugNoOfDays"]
-    if len(poc_details["diagnosis"]) > 0:
-        patient_sms+=" diagnosis: "
-        for diagnosis in poc_details["diagnosis"]:
-            patient_sms = patient_sms+diagnosis
-    anm_details = UserMasters.objects.filter(user_id=str(anmId)).values_list('phone_number','country')
-    anm_country = str(anm_details[0][1])
-    country_code= str(CountryTb.objects.filter(country_name=str(anm_country)).values_list('country_code')[0][0])
-    anm_phone = str(anm_details[0][0])
-    anm_phone = country_code+anm_phone[-int(settings.PHONE_NUMBER_LENGTH):]
-    patient_phone = country_code+patientph[-int(settings.PHONE_NUMBER_LENGTH):]
-    msg = str(AppConfiguration.objects.filter(country_name__country_name=str(anm_country)).values_list("poc_text")[0][0])+datetime.now().strftime('%d-%b-%Y %H:%M:%S')
-    anm_sms_var = '{"phone":["tel:'+str(anm_phone)+'"], "text":"' +msg+'"}'
+def docsms(workerph=None,patientph=None,worker_sms=None,patientsms=None):
+    anm_sms_var = '{"phone":["tel:'+str(workerph)+'"], "text":"' +worker_sms+'"}'
     anm_sms_curl= 'curl -i -H "Authorization: Token 78ffc91c6a5287d7cc7a9a68c4903cc61d87aecb" -H "Content-type: application/json"  -H "Accept: application/json" POST -d'+ "'"+anm_sms_var+"'"+' http://202.153.34.174/api/v1/messages.json '
     anm_sms_output = commands.getoutput(anm_sms_curl)
-    patient_sms=str(patient_sms)
-    patient_sms_var = '{"phone":["tel:'+str(patient_phone)+'"], "text":"' +patient_sms+'"}'
+    patient_sms=str(patientsms)
+    patient_sms_var = '{"phone":["tel:'+str(patientph)+'"], "text":"' +patient_sms+'"}'
     patient_sms_curl= 'curl -i -H "Authorization: Token 78ffc91c6a5287d7cc7a9a68c4903cc61d87aecb" -H "Content-type: application/json"  -H "Accept: application/json" POST -d'+ "'"+patient_sms_var+"'"+' http://202.153.34.174/api/v1/messages.json '
     patient_sms_output = commands.getoutput(patient_sms_curl)
     return anm_sms_output,patient_sms_output
@@ -153,7 +156,7 @@ def doctor_data(request):
         doc_name= request.GET.get('docname',"")
         password = request.GET.get('pwd',"")
     end_res = '{}'
-    doc_loc = str(UserMasters.objects.filter(user_id=str(doc_name),user_role="DOC").values_list('hospital')[0][0]).strip(" (PHC)")
+    doc_loc = str(UserMasters.objects.filter(user_id=str(doc_name),user_role="DOC").values_list('hospital')[0][0]).replace(" (PHC)","")
     resultdata=defaultdict(list)
     display_result=[]
     entity_list = PocInfo.objects.filter(phc=doc_loc).values_list('visitentityid','entityidec','pending','docid').distinct()
@@ -251,59 +254,40 @@ def doctor_data(request):
             elif row[-1]['value'][0] == 'child_illness' or row[-1]['value'][0] == 'child_illness_edit':
 
                 doc_id=row[-1]['id']
-                for childdata in row[-1]['value'][1]['form']['fields']:
-                    key = childdata.get('name')
-                    if 'value' in childdata.keys():
-                        value = childdata.get('value')
-                    else:
-                        value=''
-                    if key =='dateOfBirth':
-                        visit['dateOfBirth']=value
-                        age = datetime.today()-datetime.strptime(str(value),"%Y-%m-%d")
-                        visit['age']=str(age.days) +' days'
-                        visit['visit_type'] = 'CHILD'
-                    elif key == 'childSigns':
-                        visit['childSigns']=value
-                    elif key =='childSignsOther':
-                        visit['childSignsOther']=value
-                    elif key =='immediateReferral':
-                        visit['immediateReferral']=value
-                    elif key =='immediateReferralReason':
-                        visit['immediateReferralReason']=value
-                    elif key =='reportChildDisease':
-                        visit['reportChildDisease']=value
-                    elif key =='reportChildDiseaseOther':
-                        visit['reportChildDiseaseOther']=value
-                    elif key =='reportChildDiseaseDate':
-                        visit['reportChildDiseaseDate']=value
-                    elif key =='reportChildDiseasePlace':
-                        visit['reportChildDiseasePlace']=value
-                    elif key =='numberOfORSGiven':
-                        visit['numberOfORSGiven']=value
-                    elif key =='childReferral':
-                        visit['childReferral']=value
-                    elif key == 'anmPoc':
-                        visit['anmPoc']=value
-                    elif key =='submissionDate':
-                        visit['submissionDate']=value
-                    elif key == 'isHighRisk':
-                        visit['isHighRisk']=value
-                    elif key == 'id':
-                        visit['id']=doc_id
-                        visit["entityid"] = entity[0]
+                for childdata in row:
+                    child_tags = ["dateOfBirth","childSigns","childSignsOther","immediateReferral","immediateReferralReason","reportChildDisease","reportChildDiseaseOther",
+                                "reportChildDiseaseDate","reportChildDiseasePlace","numberOfORSGiven","childReferral","anmPoc","isHighRisk","submissionDate","id"]
+                    f = lambda x: x[0].get("value") if len(x)>0 else ""
+                    fetched_dict = copyf(childdata["value"][1]["form"]["fields"],"name",child_tags)
+                    visit["dateOfBirth"]=f(copyf(fetched_dict,"name","dateOfBirth"))
+                    visit["childSigns"]=f(copyf(fetched_dict,"name","childSigns"))
+                    visit["childSignsOther"]=f(copyf(fetched_dict,"name","childSignsOther"))
+                    visit["immediateReferral"]=f(copyf(fetched_dict,"name","immediateReferral"))
+                    visit["immediateReferralReason"]=f(copyf(fetched_dict,"name","immediateReferralReason"))
+                    visit["reportChildDisease"]=f(copyf(fetched_dict,"name","reportChildDisease"))
+                    visit["reportChildDiseaseOther"]=f(copyf(fetched_dict,"name","reportChildDiseaseOther"))
+                    visit["reportChildDiseaseDate"]=f(copyf(fetched_dict,"name","reportChildDiseaseDate"))
+                    visit["reportChildDiseasePlace"]=f(copyf(fetched_dict,"name","reportChildDiseasePlace"))
+                    visit["numberOfORSGiven"]=f(copyf(fetched_dict,"name","numberOfORSGiven"))
+                    visit["childReferral"]=f(copyf(fetched_dict,"name","childReferral"))
+                    visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
+                    visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
+                    visit["submissionDate"]=f(copyf(fetched_dict,"name","submissionDate"))
+                    visit["id"]=doc_id
+                    visit['visit_type'] = 'CHILD'
+                    visit["entityid"] = entity[0]
                 visit_data.append(visit)
+
         entity_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+entity_detail_id+"%22&descending=true"
         poc_output=commands.getoutput(entity_detail)
         poutput=json.loads(poc_output)
         row1 = poutput['rows']
-        print len(row1)
-
         if len(visit_data)>0:
             result=defaultdict(list)
             if len(row1)>0:
                 for i in range(len(row1)):
                     for data in row1[i]["value"][1]['form']['fields']:
-                        if row1[i]['value'][0] == "anc_registration_oa" or row1[i]['value'][0]=="anc_registration":
+                        if row1[i]['value'][0] == "anc_registration_oa" or row1[i]['value'][0]=="anc_registration" or row1[i]['value'][0]=="anc_reg_edit_oa" or row1[i]['value'][0]=="anc_reg_edit":
                             key=data.get('name')
                             value=data.get('value')
                             if key=='edd':
@@ -350,11 +334,9 @@ def doctor_data(request):
                         elif key=='wifeAge':
                             temp={}
                             temp={key:value}
-
                             result.update(temp)
                         elif key=='phoneNumber':
                             temp={}
-                            print key,value
                             temp={"phoneNumber":value}
                             result.update(temp)
                         elif key=='district':
@@ -458,16 +440,17 @@ def user_auth(request):
         country_code = CountryTb.objects.filter(country_name=str(anm_details[0][0])).values_list("country_code")[0][0]
         anm_phc = HealthCenters.objects.filter(hospital_name=subcenter,hospital_type='Subcenter').values_list('parent_hospital')
         phc = str(anm_phc[0][0])
-        location["phcName"]=phc
-        location["subCenter"]=subcenter
+        location["phcName"]=phc.replace(" ","")
+        location["subCenter"]=subcenter.replace(" ","")
         location["villages"]=str(anm_details[0][5]).split(',')
         drug_details = drug_info()
-        config_fields = AppConfiguration.objects.filter(country_name__country_name=str(user_details[0][3])).values_list('wife_age_min','wife_age_max','husband_age_min','husband_age_max','temperature_units')
+        config_fields = AppConfiguration.objects.filter(country_name__country_name=str(user_details[0][3])).values_list('wife_age_min','wife_age_max','husband_age_min','husband_age_max','temperature_units','is_highrisk')
         form_fields = FormFields.objects.filter(country__country_name=str(user_details[0][3])).values_list("form_name","field1","field2","field3","field4","field5")
         if len(config_fields) >0:
             config_data = {"wifeAgeMin":config_fields[0][0],"wifeAgeMax":config_fields[0][1],"husbandAgeMin":config_fields[0][2],"husbandAgeMax":config_fields[0][3],"temperature":config_fields[0][4]}
+        form_values=[]
         if len(form_fields)>0:
-            form_values=[]
+
             for form in form_fields:
                 if form[0] == "anc_registration":
                     form_lables={"ANCRegistration":[str(label) for label in form[1:] if label !=""]}
@@ -480,7 +463,7 @@ def user_auth(request):
                 elif form[0] == "child_registration":
                     form_lables={"ChildRegistration":[str(label) for label in form[1:] if label !=""]}
                 form_values.append(form_lables)
-        user_data["personal_info"]={"location":location,"phone":str(anm_details[0][6]),"email":str(anm_details[0][7]),"drugs":drug_details,"configuration":config_data,"countryCode":str(country_code),"formLabels":str(form_values)}
+        user_data["personal_info"]={"location":location,"phone":str(anm_details[0][6]),"email":str(anm_details[0][7]),"drugs":drug_details,"configuration":config_data,"countryCode":str(country_code),"formLabels":str(form_values),"isHighRisk":str(config_fields[0][5]).split(",")}
     end_res= json.dumps(user_data)
     return HttpResponse(end_res)
 
@@ -534,38 +517,54 @@ def vitals_data(request):
 def copyf(dictlist, key, valuelist):
       return [dictio for dictio in dictlist if dictio[key] in valuelist]
 
-# def doctor_history(request):
-#     if request.method == 'GET':
-#         docname = request.GET.get('name','')
-#     else:
-#         docname = request.POST.get('name','')
-#     backupinfo = PocBackup.objects.filter(docid = str(docname)).values_list('visitentityid','poc')
-#     for data in backupinfo:
-#         print data
-#     return HttpResponse('')
-
 def docrefer(request):
     if request.method=="GET":
         doc_id=request.GET.get("docid","")
         visitid = request.GET.get("visitid","")
         entityid = request.GET.get("entityid","")
+        patientname = str(request.GET.get("patientname",""))
     doc_details = UserMasters.objects.filter(user_id=str(doc_id)).values_list("hospital")
-    hospital_details = HealthCenters.objects.filter(hospital_name=str(doc_details[0][0])).values_list("hospital_type")
+    doc_hospital = str(doc_details[0][0]).replace(" (PHC)","")
+    hospital_details = HealthCenters.objects.filter(hospital_name=doc_hospital).values_list("hospital_type")
     if str(hospital_details[0][0])=="PHC":
         level = 2
-        location = HealthCenters.objects.filter(hospital_name=str(doc_details[0][0]),hospital_type='PHC').values_list("parent_hospital")[0][0]
+        location = str(HealthCenters.objects.filter(hospital_name=str(doc_hospital),hospital_type='PHC').values_list("parent_hospital")[0][0])
+        doctor_details = UserMasters.objects.filter(hospital=str(location)).values_list("name","phone_number","country")
+        for doctor in doctor_details:
+            country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
+            doctor_phone=country_code+str(doctor[1])[-int(settings.PHONE_NUMBER_LENGTH):]
+            msg = "Dear Doctor, %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+            doc_sms,junk_sms = docsms(workerph=doctor_phone,worker_sms=msg)
         update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
     elif str(hospital_details[0][0])=="SubDistrict":
         level = 3
         location = HealthCenters.objects.filter(hospital_name=str(doc_details[0][0]),hospital_type='SubDistrict').values_list("parent_hospital")[0][0]
+        doctor_details = UserMasters.objects.filter(hospital=str(location)).values_list("name","phone_number","country")
+        for doctor in doctor_details:
+            country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
+            doctor_phone=country_code+str(doctor[1])[-int(settings.PHONE_NUMBER_LENGTH):]
+            msg = "Dear %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+            doc_sms,junk_sms = docsms(workerph=doctor_phone,worker_sms=msg)
         update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
     elif str(hospital_details[0][0])=="District":
         level = 4
         location = HealthCenters.objects.filter(hospital_name=str(doc_details[0][0]),hospital_type='District').values_list("parent_hospital")[0][0]
+        doctor_details = UserMasters.objects.filter(hospital=str(location)).values_list("name","phone_number","country")
+        for doctor in doctor_details:
+            country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
+            doctor_phone=country_code+str(doctor[1])[-int(settings.PHONE_NUMBER_LENGTH):]
+            msg = "Dear %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+            doc_sms,junk_sms = docsms(workerph=doctor_phone,worker_sms=msg)
         update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
     elif str(hospital_details[0][0])=="County":
         level = 2
         location = HealthCenters.objects.filter(hospital_name=str(doc_details[0][0]),hospital_type='County').values_list("parent_hospital")[0][0]
+        doctor_details = UserMasters.objects.filter(hospital=str(location)).values_list("name","phone_number","country")
+        for doctor in doctor_details:
+            country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
+            doctor_phone=country_code+str(doctor[1])[-int(settings.PHONE_NUMBER_LENGTH):]
+            msg = "Dear %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+            doc_sms,junk_sms = docsms(workerph=doctor_phone,worker_sms=msg)
         update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
 
     return HttpResponse('Level upgraded')
@@ -882,9 +881,6 @@ def save_usermaintenance(request):
         subcentername=request.POST.get('subcenter_name')
         hospital_name = request.POST.get('hospitals','')
         active = str(request.POST.get('active',''))
-
-
-
     pwd = hashlib.sha1()
     pwd.update(password)
     password = pwd.hexdigest()
@@ -1449,29 +1445,101 @@ def subcenter(request):
     res = json.dumps(result)
     return HttpResponse(res)
 
-#Still pending
 def doctor_overview(request):
     if request.method == "GET":
         o_visitid = request.GET.get("visitid","")
-        o_entityid = str(request.GET.get("entityid",""))
+        o_entityid =request.GET.get("entityid","")
+    display_result=[]
     overview_data = []
-    overview_events = {}
-    overview_visit_curl = ancvisit_detail="curl -s -H -X GET http://10.10.10.108:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(o_visitid)+"%22&descending=true"
+
+    overview_visit_curl = ancvisit_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(o_visitid)+"%22&descending=true"
     overview_visit_output = commands.getoutput(overview_visit_curl)
     overview_visit_details = json.loads(overview_visit_output)
     overview_visit_data = overview_visit_details["rows"]
-
     for event in overview_visit_data:
         overview_events = {}
-        overview_events["eventName"]=str(event["value"][0])
-        visit_data = {}
-        for visit in event["value"][1]["form"]["fields"]:
-            key = visit.get('name')
-            if 'value' in visit.keys():
-                value = visit.get('value')
-            else:
-                value=''
-            visit_data[str(key)]=str(value)
-        overview_events["eventInfo"]=visit_data
-        overview_data.append(overview_events)
-    return HttpResponse(overview_data)
+        if str(event['value'][0]) == 'pnc_visit' or str(event['value'][0]) == 'pnc_visit_edit':
+            pnc_tags = ["pncNumber","pncVisitDate","difficulties1","difficulties2","abdominalProblems","urineStoolProblems",
+                        "hasFeverSymptoms","breastProblems","vaginalProblems","bpSystolic","bpDiastolic","temperature","pulseRate",
+                        "bloodGlucoseData","weight","anmPoc","pncVisitPlace","pncVisitDate","isHighRisk","hbLevel","docPocInfo"]
+            f = lambda x: x[0].get("value") if len(x)>0 else ""
+
+            fetched_dict = copyf(event["value"][1]["form"]["fields"],"name",pnc_tags)
+
+            overview_events["pncNumber"]=f(copyf(fetched_dict,"name","pncNumber"))
+            overview_events["visitDate"]=f(copyf(fetched_dict,"name","pncVisitDate"))
+            difficulty1=str(f(copyf(fetched_dict,"name","difficulties1")))
+            difficulty2=str(f(copyf(fetched_dict,"name","difficulties2")))
+            abdominal_problem=str(f(copyf(fetched_dict,"name","abdominalProblems")))
+            urineStoolProblems=str(f(copyf(fetched_dict,"name","urineStoolProblems")))
+            hasFeverSymptoms=str(f(copyf(fetched_dict,"name","hasFeverSymptoms")))
+            breastProblems=str(f(copyf(fetched_dict,"name","breastProblems")))
+            vaginalProblems=str(f(copyf(fetched_dict,"name","vaginalProblems")))
+            overview_events["riskObserved"]=difficulty1+","+difficulty2+","+abdominal_problem+","+urineStoolProblems+","+hasFeverSymptoms+","+breastProblems+","+vaginalProblems
+            overview_events["bpSystolic"]=str(f(copyf(fetched_dict,"name","bpSystolic")))
+            overview_events["bpDiastolic"]=f(copyf(fetched_dict,"name","bpDiastolic"))
+            overview_events["temperature"]=f(copyf(fetched_dict,"name","temperature"))
+            overview_events["pulseRate"]=str(f(copyf(fetched_dict,"name","pulseRate")))
+            overview_events["bloodGlucoseData"]=f(copyf(fetched_dict,"name","bloodGlucoseData"))
+            overview_events["weight"]=f(copyf(fetched_dict,"name","weight"))
+            overview_events["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
+            overview_events["visitPlace"]=f(copyf(fetched_dict,"name","visitPlace"))
+            overview_events["visitDate"]=f(copyf(fetched_dict,"name","visitDate"))
+            overview_events["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
+            overview_events["hbLevel"]=f(copyf(fetched_dict,"name","hbLevel"))
+            overview_events["docPocInfo"]=f(copyf(fetched_dict,"name","docPocInfo"))
+            overview_events['visit_type'] = 'PNC'
+            overview_events['server_version'] = event["value"][-1]
+            overview_events['id'] = event["id"]
+            overview_data.append(overview_events)
+        elif str(event['value'][0]) == 'anc_visit' or str(event['value'][0]) == 'anc_visit_edit':
+            anc_tags = ["ancVisitNumber","ancNumber","ancVisitPerson","ancVisitDate","riskObservedDuringANC","bpSystolic","bpDiastolic",
+                        "temperature","pulseRate","bloodGlucoseData","weight","anmPoc","isHighRisk","fetalData","docPocInfo"]
+            f = lambda x: x[0].get("value") if len(x)>0 else ""
+            fetched_dict = copyf(event["value"][1]["form"]["fields"],"name",anc_tags)
+            overview_events["visitNumber"]=f(copyf(fetched_dict,"name","ancVisitNumber"))
+            overview_events["ancNumber"]=f(copyf(fetched_dict,"name","ancNumber"))
+            overview_events["visitPerson"]=f(copyf(fetched_dict,"name","ancVisitPerson"))
+            overview_events["visitDate"]=f(copyf(fetched_dict,"name","ancVisitDate"))
+            overview_events["riskObserved"]=f(copyf(fetched_dict,"name","riskObservedDuringANC"))
+            overview_events["bpSystolic"]=f(copyf(fetched_dict,"name","bpSystolic"))
+            overview_events["bpDiastolic"]=f(copyf(fetched_dict,"name","bpDiastolic"))
+            overview_events["temperature"]=f(copyf(fetched_dict,"name","temperature"))
+            overview_events["pulseRate"]=str(f(copyf(fetched_dict,"name","pulseRate")))
+            overview_events["bloodGlucoseData"]=f(copyf(fetched_dict,"name","bloodGlucoseData"))
+            overview_events["weight"]=f(copyf(fetched_dict,"name","weight"))
+            overview_events["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
+            overview_events["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
+            overview_events["fetalData"]=f(copyf(fetched_dict,"name","fetalData"))
+            overview_events["docPocInfo"]=f(copyf(fetched_dict,"name","docPocInfo"))
+            overview_events['visit_type'] = 'ANC'
+            overview_events['server_version'] = event["value"][-1]
+            overview_events['id'] = event["id"]
+            overview_data.append(overview_events)
+        elif str(event['value'][0]) == 'child_illness' or str(event['value'][0]) == 'child_illness_edit':
+
+            child_tags = ["dateOfBirth","childSigns","childSignsOther","immediateReferral","immediateReferralReason","reportChildDisease","reportChildDiseaseOther",
+                        "reportChildDiseaseDate","reportChildDiseasePlace","numberOfORSGiven","childReferral","anmPoc","isHighRisk","submissionDate","id","docPocInfo"]
+            f = lambda x: x[0].get("value") if len(x)>0 else ""
+            fetched_dict = copyf(event["value"][1]["form"]["fields"],"name",child_tags)
+            overview_events["dateOfBirth"]=f(copyf(fetched_dict,"name","dateOfBirth"))
+            overview_events["childSigns"]=f(copyf(fetched_dict,"name","childSigns"))
+            overview_events["childSignsOther"]=f(copyf(fetched_dict,"name","childSignsOther"))
+            overview_events["immediateReferral"]=f(copyf(fetched_dict,"name","immediateReferral"))
+            overview_events["immediateReferralReason"]=f(copyf(fetched_dict,"name","immediateReferralReason"))
+            overview_events["reportChildDisease"]=f(copyf(fetched_dict,"name","reportChildDisease"))
+            overview_events["reportChildDiseaseOther"]=f(copyf(fetched_dict,"name","reportChildDiseaseOther"))
+            overview_events["reportChildDiseaseDate"]=f(copyf(fetched_dict,"name","reportChildDiseaseDate"))
+            overview_events["reportChildDiseasePlace"]=f(copyf(fetched_dict,"name","reportChildDiseasePlace"))
+            overview_events["numberOfORSGiven"]=f(copyf(fetched_dict,"name","numberOfORSGiven"))
+            overview_events["childReferral"]=f(copyf(fetched_dict,"name","childReferral"))
+            overview_events["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
+            overview_events["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
+            overview_events["visitDate"]=f(copyf(fetched_dict,"name","submissionDate"))
+            overview_events["docPocInfo"]=f(copyf(fetched_dict,"name","docPocInfo"))
+            overview_events['visit_type'] = 'CHILD'
+            overview_events['server_version'] = event["value"][-1]
+            overview_events['id'] = event["id"]
+            overview_data.append(overview_events)
+    end_res= json.dumps(overview_data)
+    return HttpResponse(end_res)
