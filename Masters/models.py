@@ -393,7 +393,7 @@ class Frequency(models.Model):
         #managed = False
         db_table = 'frequency'
         verbose_name_plural="FREQUENCIES"
-	verbose_name='FREQUIENCIES'
+	verbose_name='FREQUIENCY'
 
     def __unicode__(self):
         return unicode(self.number_of_times)
@@ -557,8 +557,8 @@ class UserMasters(models.Model):
     class Meta:
         #managed = False
         db_table = 'user_masters'
-        verbose_name_plural="USER MAINTENANCE"
-        verbose_name="USER MAINTENANCE"
+        verbose_name_plural="USER MASTERS"
+        verbose_name="USER MASTERS"
 
     def __unicode__(self):
         return self.user_id
@@ -666,8 +666,8 @@ class SubdistrictTab(models.Model):
 
     class Meta:
         #managed = False
-        verbose_name_plural="SUBDISTRICT"
-        verbose_name="SUBDISTRICT"
+        verbose_name_plural="SUB-DISTRICT"
+        verbose_name="SUB-DISTRICT"
         db_table = 'subdistrict_tab'
 
 class LocationTab(models.Model):
@@ -676,11 +676,12 @@ class LocationTab(models.Model):
     county = models.CharField(max_length=100, blank=True)
     district = models.CharField(max_length=100, blank=True)
     subdistrict = models.CharField(max_length=100, blank=True)
-    location = models.CharField(unique=True, max_length=100, blank=True)
+    location = models.CharField(max_length=100, blank=True)
     active = models.BooleanField(default=True)
 
     class Meta:
         #managed = False
+        unique_together = ("country", "location",)
         verbose_name_plural="LOCATIONS"
         verbose_name="LOCATIONS"
         db_table = 'location_tab'
@@ -701,29 +702,32 @@ class HealthCenters(models.Model):
 
     class Meta:
         #managed = False
-        verbose_name_plural="HEALTHCENTERS"
+        verbose_name_plural="HEALTH CENTERS"
         db_table = 'health_centers'
-        verbose_name= 'HEALTHCENTERS'
+        verbose_name= 'HEALTH CENTERS'
 
 class AppConfiguration(models.Model):
     TEMP = (("celsius","Celsius"),
-            ("farenheit","Farenheit"))
+            ("fahrenheit","Fahrenheit"))
+    IS_HIGHRISK = (('TB', 'TB'),
+               ('Hypertension', 'Hypertension'),
+               ('Heart-related-diseases', 'Heart-related-diseases'),
+               ('Diabetes', 'Diabetes'))
     #id = models.IntegerField(primary_key=True)  # AutoField?
-    country_name = models.ForeignKey(CountryTb, db_column='country_name',limit_choices_to={'active': True})
-    wife_age_min = models.PositiveIntegerField()
-    wife_age_max = models.PositiveIntegerField()
-    husband_age_min = models.PositiveIntegerField()
-    husband_age_max = models.PositiveIntegerField()
-    temperature_units = models.CharField(max_length=20)
-    registration_text = models.TextField(max_length=480)
-    escalation_schedule = models.IntegerField()
-    poc_text = models.TextField(max_length=480)
+    country_name = models.ForeignKey(CountryTb, db_column='country_name',limit_choices_to={'active': True}, unique=True)
+    wife_age_min = models.PositiveIntegerField(help_text="Enter min age in years")
+    wife_age_max = models.PositiveIntegerField(help_text="Enter max age in years")
+    husband_age_min = models.PositiveIntegerField(help_text="Enter min age in years")
+    husband_age_max = models.PositiveIntegerField(help_text="Enter max age in years")
+    temperature_units = models.CharField(max_length=20,choices=TEMP)
+    escalation_schedule = models.IntegerField(help_text="Enter escalation units as number of minutes (Eg: for 2hrs =120)")
+    is_highrisk = MultiSelectField(choices=IS_HIGHRISK)
 
     class Meta:
         #managed = False
         db_table = 'app_configuration'
-        verbose_name_plural="APPCONFIGURATION"
-        verbose_name="APPCONFIGURATION"
+        verbose_name_plural="APP CONFIGURATION"
+        verbose_name="APP CONFIGURATION"
 
 class FormFields(models.Model):
     FORMS = (("anc_registration","ANC Registration"),
@@ -744,5 +748,37 @@ class FormFields(models.Model):
         #managed = False
         unique_together = ("country", "form_name",)
         db_table = "form_fields"
-        verbose_name_plural="FORMFIELDS"
-        verbose_name="FORMFIELDS"
+        verbose_name_plural="FORM FIELDS"
+        verbose_name="FORM FIELDS"
+
+class VisitConfiguration(models.Model):
+    #id = models.IntegerField(primary_key=True)  # AutoField?
+    anc_visit1_from_week = models.IntegerField(blank=True, null=True)
+    anc_visit1_to_week = models.IntegerField(blank=True, null=True)
+    anc_visit2_from_week = models.IntegerField(blank=True, null=True)
+    anc_visit2_to_week = models.IntegerField(blank=True, null=True)
+    anc_visit3_from_week = models.IntegerField(blank=True, null=True)
+    anc_visit3_to_week = models.IntegerField(blank=True, null=True)
+    anc_visit4_from_week = models.IntegerField(blank=True, null=True)
+    anc_visit4_to_week = models.IntegerField(blank=True, null=True)
+    class Meta:
+        managed = False
+        db_table = 'visit_configuration'
+        verbose_name_plural="VISIT CONFIGURATION"
+        verbose_name="VISIT CONFIGURATION"
+
+class AncDue(models.Model):
+#    id = models.IntegerField(unique=True)
+    entityid = models.CharField(primary_key=True, max_length=200)
+    patientnum = models.CharField(max_length=200, blank=True)
+    anmnum = models.CharField(max_length=200, blank=True)
+    visittype = models.CharField(max_length=200, blank=True)
+    visitno = models.IntegerField(blank=True, null=True)
+    lmpdate = models.CharField(max_length=200, blank=True)
+    womenname = models.CharField(max_length=200, blank=True)
+    visitdate = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'anc_due'
+

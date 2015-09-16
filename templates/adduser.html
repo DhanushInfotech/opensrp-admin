@@ -193,23 +193,13 @@ div.submit {
                         </div>
             
         </div>
-        <div class="form-row field-password">
+        <div class="form-row field-user_pwd">
 
                         <div>
-
                         <label class="required" for="id_user_pwd">Password:<span style="color:red">&nbsp;*</span></label>
-                        <input type="password" class="vTextField" id="id_user_pwd" name="user_pwd"  data-val="true" data-val-required="Password cannot be empty"  maxlength="10" minlength="6" />
-                        <span class="field-validation-valid" data-valmsg-for="user_pwd" data-valmsg-replace="true" ></span>
-                        </div>
 
-        </div>
-        <div class="form-row field-user_conf_pwd">
-
-                        <div>
-                        <label class="required" for="user_conf_pwd">Confirm Password:<span style="color:red">&nbsp;*</span></label>
-                        <input type="password" class="vTextField" id="id_user_conf_pwd" name="user_conf_pwd"  data-val="true" data-val-required="Confirm Password cannot be empty"  maxlength="10" minlength="6" data-val-equalto="Password doesn't match!" data-val-equalto-other="*.user_pwd"/>
-
-                          <span class="field-validation-valid" data-valmsg-for="user_conf_pwd" data-valmsg-replace="true"></span>
+                         <input type="password" class="vTextField" id="id_user_pwd" name="id_user_pwd" value="" data-val="true" data-val-required="Pasword cannot be empty" minlength="6" maxlength="10"/>
+                          <span class="field-validation-valid" data-valmsg-for="id_user_pwd" data-valmsg-replace="true" ></span>
                         </div>
             
         </div>
@@ -317,17 +307,18 @@ div.submit {
         </div>
         <div class="form-row field-hosp_name" id="dv-hosp" style="display:none">
                 <div>
-                    
-                    
-                        <label class="required" for="id_hosp_name">Hospital:</label>
-                        <select id="id_hosp_name" name="id_hosp_name"  >
+
+
+                        <label class="required" for="id_hosp_name">Hospital:<span style="color:red">&nbsp;*</span></label>
+                            <select id="id_hosp_name" name="id_hosp_name"  data-val="true" data-val-required="Hospital cannot be empty" onchange="switchControls(this.value)">
 
                 </select>
-                        
+
               <!--   <select id="id_hosp_name" name="id_hosp_name"   data-val="true"  data-val-required-cond="Hospital cannot be empty" data-val-required-cond-value="user_role">
 
                 </select>
                     <span class="field-validation-valid" data-valmsg-for="id_hosp_name" data-valmsg-replace="true" ></span> -->
+                    <span class="field-validation-valid" data-valmsg-for="id_hosp_name" data-valmsg-replace="true"></span>
                 </div>
         </div>
         

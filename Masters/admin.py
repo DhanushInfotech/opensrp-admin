@@ -330,7 +330,7 @@ class AppConfigurationAdmin(admin.ModelAdmin):
     search_fields = ('wife_age_min',)
     fieldsets = (
       (None, {
-          'fields': ('country_name','temperature_units','registration_text','poc_text','escalation_schedule')
+          'fields': ('country_name','temperature_units','escalation_schedule','is_highrisk')
       }),
       ('Wife age', {
           'fields': ('wife_age_min','wife_age_max')
@@ -360,6 +360,31 @@ class FormFieldsAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+class VisitConfigurationAdmin(admin.ModelAdmin):
+    list_display = ('anc_visit1_from_week','anc_visit1_to_week','anc_visit2_from_week','anc_visit2_to_week','anc_visit3_from_week','anc_visit3_to_week','anc_visit4_from_week','anc_visit4_to_week')
+    search_fields = ('anc_visit1_from_week',)
+    fieldsets = (
+        ('Anc Visit1', {
+            'fields': ('anc_visit1_from_week','anc_visit1_to_week')
+            }),
+        ('Anc Visit2', {
+            'fields': ('anc_visit2_from_week','anc_visit2_to_week')
+            }),
+        ('Anc Visit3', {
+            'fields': ('anc_visit3_from_week','anc_visit3_to_week')
+            }),
+        ('Anc Visit4', {
+            'fields': ('anc_visit4_from_week','anc_visit4_to_week')
+            }),
+        )
+    def get_actions(self, request):
+        actions = super(VisitConfigurationAdmin, self).get_actions(request)
+        del actions['delete_selected']
+        return actions
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 admin.site.register(DimAnm,DimAnmAdmin)
 admin.site.register(DimPhc,DimPhcAdmin)
 admin.site.register(DrugInfo,DrugInfoAdmin)
@@ -378,3 +403,4 @@ admin.site.register(LocationTab,LocationTabAdmin)
 admin.site.register(HealthCenters,HealthCenterAdmin)
 admin.site.register(AppConfiguration,AppConfigurationAdmin)
 admin.site.register(FormFields,FormFieldsAdmin)
+admin.site.register(VisitConfiguration,VisitConfigurationAdmin)

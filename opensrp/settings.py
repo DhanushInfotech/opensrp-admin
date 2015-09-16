@@ -65,7 +65,8 @@ DATABASES = {
         'NAME': 'drishti',
         'USER': 'dhanush',
         'PASSWORD': 'dhanush',
-        'HOST': 'localhost',
+        #'HOST': '10.10.11.79',
+        'HOST': '202.153.34.169',
         'PORT': '5432',
         'OPTIONS': {
            'options': '-c search_path=report'
