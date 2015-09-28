@@ -226,8 +226,8 @@ div.submit {
 </div>
 
 <div class="submit-row">
-<button type="submit" class="btn btn-success" id="advance-save-button">save</button>
-<button type="button" class="btn btn-success" id="advance-cancel-button" onclick="window.location='/admin/Masters/disttab/'">cancel</button>
+<button type="button" class="btn btn-success" id="advance-cancel-button" onclick="window.location='/admin/Masters/disttab/add/'">Save and add another</button>
+<button type="submit" class="btn btn-success" id="advance-save-button" style="background:#7ca0c7">Save</button>
 </div>
 
 </form></div>
@@ -298,6 +298,47 @@ div.submit {
                 }else{
                     
                     window.location='/admin/Masters/disttab/';
+                }
+                }
+
+            });
+        }
+
+    });
+
+      
+})
+
+
+
+ $("document").ready(function(){
+
+ $("#advance-cancel-button").on('click', function(){
+        
+        if ($("form").valid()) {
+
+            var country = $("select[name=country_name]").val();
+            //alert(country)
+            var county = $("select[name=county_name]").val();
+            //alert(county)
+            var district = document.getElementById("id_district_name").value;
+            //alert(district)
+            var active=document.getElementById('status').checked==true ? "true" :"false";
+             $.ajax({
+
+                url: "/savedistrict/?country="+ country +"&county="+ county +"&district="+ district+"&active="+active,
+                type: 'GET',
+                acceptType: "json",
+                success: function (result) {
+                if (result.error){
+                    
+                    for (var key in result.response.keys()){
+                        $("#id_"+key).after("<p class='error'>"+result.response[key]+"</p>")
+                    }
+
+                }else{
+                    
+                    window.location='/admin/Masters/disttab/add/';
                 }
                 }
 

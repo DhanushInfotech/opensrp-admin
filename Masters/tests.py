@@ -69,9 +69,10 @@ class AppConfigurationTestCase(TestCase):
     def setUp(self):
         self.country=CountryTb.objects.create(country_name="India",country_code="91")
     def test_appconfiguration(self):
-    	configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",registration_text="poc done",escalation_schedule="2",poc_text="msg")
+    	configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",escalation_schedule="2")
     	self.assertEqual(configuration.wife_age_max,'60')
     	self.assertNotEqual(configuration.wife_age_min,'35')
+
 class ICD10TestCase(TestCase):
     def setUp(self):
         ICD10.objects.create(ICD10_Chapter="dhanush",ICD10_Code="1245",ICD10_Name="nurse")
@@ -91,8 +92,7 @@ class DirectionsTestCase(TestCase):
         directions = Directions.objects.get(directions="before breakfast")
         self.assertEqual(directions.directions,'before breakfast')
         self.assertEqual(len(directions.directions),16)
-        print directions.directions
-        print len(directions.directions)
+
 class DosageTestCase(TestCase):
     def setUp(self):
         Dosage.objects.create(dosage="500mg")

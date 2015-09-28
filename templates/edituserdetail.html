@@ -133,8 +133,8 @@ div.submit {
 <div class="breadcrumbs">
 <a href="/admin/">Home</a>
 &rsaquo; <a href="/admin/Masters/">Masters</a>
-&rsaquo; <a href="/admin/Masters/usermasters/">UserMaintenance</a>
-&rsaquo; Add UserMaintenance
+&rsaquo; <a href="/admin/Masters/usermasters/">UserMasters</a>
+&rsaquo; Add UserMasters
 </div>
 
     <!-- Content -->
@@ -340,14 +340,17 @@ div.submit {
                     <input type="checkbox"  value="{{v}}" name="village" id = 'villageselected' checked data-val="true" data-val-checkbox="Select atleast one village" />
                     {{v}}
                     {% endfor %}
-
+                    {% for l in vil %}
+                    <input type="checkbox"  value="{{l}}" name="village" id = 'villageselected' />
+                    {{l}}
+                    {% endfor %}
 
                 </div>
                  <span class="field-validation-valid" data-valmsg-for="village" data-valmsg-replace="true" ></span>
 
                 </div>
         </div>
-        <div class="form-row field-hosp_name" id="dv-hosp" style="display:none">
+         <div class="form-row field-hosp_name" id="dv-hosp" style="display:none">
                 <div>
                     
                     
@@ -377,7 +380,7 @@ div.submit {
 <div class="submit-row">
 <button type="submit" class="btn btn-success"   id="advance-save-button" >save</button>
 
-<button type="button" class="btn btn-success" id="advance-cancel-button">cancel</button>
+<button type="button" class="btn btn-success" id="advance-cancel-button">save and another</button>
 
 <button type="button" class="btn btn-success" id="btnResetPwd" >Reset Password </button>
 
@@ -597,11 +600,10 @@ $('#status').val()=='true' ?  $('#status').attr('checked','checked') :  $('#stat
 
 
  
-    
-        $("form").submit( function(e){
-        e.preventDefault();         
-
-if ($("form").valid()) {
+$("form").submit(function  (e) {
+        // body...
+        e.preventDefault();
+        if ($("form").valid()) {
             var role = document.getElementById("user_role").value; 
             //alert(role);         
             var userid=document.getElementById("id_user_id").value;
@@ -667,9 +669,80 @@ var active=document.getElementById('status').checked==true ? "true" :"false";
 
     
     });
-    $("#advance-cancel-button").on('click', function(){
-        window.location="/admin/Masters/usermasters/";
+
+})
+
+$("document").ready(function(){
+        $("#advance-cancel-button").on('click', function(){        // body...
+        if ($("form").valid()) {
+            var role = document.getElementById("user_role").value; 
+            //alert(role);         
+            var userid=document.getElementById("id_user_id").value;
+            //alert(userid);
+            var ufname=document.getElementById("id_user_fname").value;
+            //alert(ufname);
+            var lname=document.getElementById("id_user_lname").value;
+            //alert(lname);
+            var upwd=document.getElementById("id_user_pwd").value;
+            //alert(upwd);
+            var pnum=document.getElementById("id_user_phnum").value;
+            //alert(pnum);
+            var mail=document.getElementById("id_user_email").value;
+            //alert(mail);
+            var ctry=document.getElementById("country").value;
+            //alert(ctry);
+            var cty=document.getElementById("id_county_name").value;
+            //alert(cty);
+            var dist=document.getElementById("id_district_name").value;
+            //alert(dist);
+            var sub_dist=document.getElementById("id_subdistrict_name").value;
+            //alert(sub_dist);
+            var sub_ctr=document.getElementById("id_sub_center").value;
+            //alert(sub_ctr);
+            var hosp=document.getElementById("id_hosp_name").value;
+            //alert(hosp);
+            var villages = [];
+            $.each($("input[name='village']:checked"), function(){ 
+                //alert(villages.push($(this).val()))           
+                villages.push($(this).val());
+            });
+            villages=villages.join(",")
+            //alert(villages)
+
+var active=document.getElementById('status').checked==true ? "true" :"false";
+        
+          
+       // alert("valid")
+            $.ajax({
+                url: "/updateusermaintenance/?userrole="+role +"&userid="+ userid +"&first_name="+ ufname +"&last_name="+lname+"&password="+ upwd +"&mobile="+ pnum+"&village="+ villages + "&email="+ mail +"&country_name="+ ctry + "&county_name="+ cty + "&district_name="+ dist +"&subdistrict_name="+ sub_dist+"&subcenter_name="+ sub_ctr + "&hospitals="+hosp+"&active="+active,
+                type: "GET",
+                dataType: "json",
+                success: function(result){
+                    if (result.error){
+                    
+                    for (var key in result.response.keys()){
+                        $("#id_"+key).after("<p class='error'>"+result.response[key]+"</p>")
+                    }
+
+                }else{
+                    
+                    window.location='/admin/Masters/usermasters/add/';
+                }
+                },
+                error:function  (a,b,c) {
+                    // body...
+                    console.log(a)
+                    console.log(b)
+                    console.log(c)
+                }
+            });
+        }         
+
+    
     });
+/*    $("#advance-cancel-button").on('click', function(){
+        window.location="/admin/Masters/usermasters/add/";
+    });*/
 })
 
 function switchControls(val)

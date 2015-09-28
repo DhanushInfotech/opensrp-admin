@@ -111,7 +111,7 @@ ADMIN_MEDIA_PREFIX = '/static/admin/'
 TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'templates')]
 DRUG_MAP = {"CHILD":0,"PNC":1,"ANC":2}
 USER_ROLE={"ANM":"ROLE_USER","PHC":"ROLE_PHC_USER","DOC":"ROLE_DOC_USER"}
-STATICFILES_DIRS = (BASE_DIR + '/static',)
+STATICFILES_DIRS = (BASE_DIR + '/static/',)
 
 
 import sys

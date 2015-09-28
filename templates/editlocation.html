@@ -267,7 +267,7 @@ div.submit {
 
 <div class="submit-row">
 <button type="submit" class="btn btn-success" id="advance-save-button">save</button>
-<button type="button" class="btn btn-success" id="advance-cancel-button" onclick="window.location='/admin/Masters/locationtab/'">cancel</button>
+<button type="button" class="btn btn-success" id="advance-cancel-button" onclick="window.location='/admin/Masters/locationtab/add/'">save and add another</button>
 </div>
 
 </form></div>
@@ -404,6 +404,49 @@ $("document").ready(function(){
                     //top.location.href = result.redirect;
                     //alert('district');
                     window.location='/admin/Masters/locationtab/';
+                }
+                }
+
+            });
+
+        }
+       
+        });
+})
+
+$("document").ready(function(){
+        $("#advance-cancel-button").on('click', function(){        // body...
+        if ($("form").valid()) {
+            
+                
+            var country = $("select[name=country_name]").val();
+            //alert(country)
+            var county = $("select[name=county_name]").val();
+            //alert(county)
+            var district = $("select[name=district_name]").val();
+            //alert(district)
+            var subdistrict = $("select[name=subdistrict_name]").val();
+            //alert(subdistrict)
+            var location = document.getElementById("id_location_name").value;
+            //alert(location)
+            var active=document.getElementById('status').checked==true ? "true" :"false";
+            $.ajax({
+
+                url: "/updatelocation/?country="+ country +"&county="+ county +"&district="+ district+"&subdistrict="+ subdistrict+"&location="+ location+"&active="+active,
+                type: 'GET',
+                acceptType: "json",
+                success: function (result) {
+                if (result.error){
+                    // $("p.error").remove();
+                    //alert('hi');
+                    for (var key in result.response.keys()){
+                        $("#id_"+key).after("<p class='error'>"+result.response[key]+"</p>")
+                    }
+
+                }else{
+                    //top.location.href = result.redirect;
+                    //alert('district');
+                    window.location='/admin/Masters/locationtab/add/';
                 }
                 }
 

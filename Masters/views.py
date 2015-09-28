@@ -296,12 +296,13 @@ def doctor_data(request):
                                 edd_datetime = str(value).split(',')
                                 edd_date = edd_datetime[-1].split(' ')
                                 edd = '-'.join(edd_date[1:4])
-                                dat = datetime.strptime(edd,'%d-%b-%Y')
-                                lmp_date = dat+timedelta(days=-280)
-                                lmp = datetime.strftime(lmp_date ,'%d-%b-%Y')
-                                visit['edd']=edd
-                                visit['lmp']=lmp
-                                visit_data.append(visit)
+                                if len(edd)>0:
+                                    dat = datetime.strptime(edd,'%d-%b-%Y')
+                                    lmp_date = dat+timedelta(days=-280)
+                                    lmp = datetime.strftime(lmp_date ,'%d-%b-%Y')
+                                    visit['edd']=edd
+                                    visit['lmp']=lmp
+                                    visit_data.append(visit)
                         elif row1[i]['value'][0] == "child_registration_oa":
                             key = data.get('name')
                             if 'value' in child_data.keys():
@@ -334,6 +335,7 @@ def doctor_data(request):
                         elif key=='wifeAge':
                             temp={}
                             temp={key:value}
+
                             result.update(temp)
                         elif key=='phoneNumber':
                             temp={}
@@ -450,7 +452,6 @@ def user_auth(request):
             config_data = {"wifeAgeMin":config_fields[0][0],"wifeAgeMax":config_fields[0][1],"husbandAgeMin":config_fields[0][2],"husbandAgeMax":config_fields[0][3],"temperature":config_fields[0][4]}
         form_values=[]
         if len(form_fields)>0:
-
             for form in form_fields:
                 if form[0] == "anc_registration":
                     form_lables={"ANCRegistration":[str(label) for label in form[1:] if label !=""]}
@@ -516,6 +517,7 @@ def vitals_data(request):
 
 def copyf(dictlist, key, valuelist):
       return [dictio for dictio in dictlist if dictio[key] in valuelist]
+
 
 def docrefer(request):
     if request.method=="GET":
@@ -881,6 +883,9 @@ def save_usermaintenance(request):
         subcentername=request.POST.get('subcenter_name')
         hospital_name = request.POST.get('hospitals','')
         active = str(request.POST.get('active',''))
+
+
+
     pwd = hashlib.sha1()
     pwd.update(password)
     password = pwd.hexdigest()
@@ -1541,5 +1546,6 @@ def doctor_overview(request):
             overview_events['server_version'] = event["value"][-1]
             overview_events['id'] = event["id"]
             overview_data.append(overview_events)
+
     end_res= json.dumps(overview_data)
     return HttpResponse(end_res)

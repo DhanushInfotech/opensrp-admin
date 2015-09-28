@@ -230,7 +230,7 @@ div.submit {
 
 <div class="submit-row">
 <button type="submit" class="btn btn-success" id="advance-save-button">save</button>
-<button type="button" class="btn btn-success" id="advance-cancel-button" onclick="window.location='/admin/Masters/disttab/'">cancel</button>
+<button type="button" class="btn btn-success" id="advance-cancel-button" onclick="window.location='/admin/Masters/disttab/add/'">save and add another</button>
 </div>
 
 </form></div>
@@ -318,6 +318,42 @@ $("document").ready(function(){
 
        
 })
+
+
+$("document").ready(function(){
+        $("#advance-cancel-button").on('click', function(){        // body...
+        if ($("form").valid()) {
+            var country = $("select[name=country_name]").val();
+           
+            var county = $("select[name=county_name]").val();
+            
+            var district = document.getElementById("id_district_name").value;
+            var active=document.getElementById('status').checked==true ? "true" :"false";
+            $.ajax({
+
+                url: "/updatedistrict/?country="+ country +"&county="+ county +"&district="+ district+"&active="+active,
+                type: 'GET',
+                acceptType: "json",
+                success: function (result) {
+                if (result.error){
+                    
+                    for (var key in result.response.keys()){
+                        $("#id_"+key).after("<p class='error'>"+result.response[key]+"</p>")
+                    }
+
+                }else{
+                   
+                    window.location='/admin/Masters/disttab/add/';
+                }
+                }
+
+            });
+            }
+        });
+
+       
+})
+
 </script>
 
 
