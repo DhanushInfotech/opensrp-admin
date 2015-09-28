@@ -277,6 +277,7 @@ def doctor_data(request):
                     visit['visit_type'] = 'CHILD'
                     visit["entityid"] = entity[0]
                 visit_data.append(visit)
+
         entity_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+entity_detail_id+"%22&descending=true"
         poc_output=commands.getoutput(entity_detail)
         poutput=json.loads(poc_output)
@@ -516,6 +517,7 @@ def vitals_data(request):
 
 def copyf(dictlist, key, valuelist):
       return [dictio for dictio in dictlist if dictio[key] in valuelist]
+
 
 def docrefer(request):
     if request.method=="GET":
@@ -1494,8 +1496,6 @@ def doctor_overview(request):
             overview_events['visit_type'] = 'PNC'
             overview_events['server_version'] = event["value"][-1]
             overview_events['id'] = event["id"]
-                # overview_events["entityid"] = entity[0]
-                # overview_events['id']=doc_id
             overview_data.append(overview_events)
         elif str(event['value'][0]) == 'anc_visit' or str(event['value'][0]) == 'anc_visit_edit':
             anc_tags = ["ancVisitNumber","ancNumber","ancVisitPerson","ancVisitDate","riskObservedDuringANC","bpSystolic","bpDiastolic",
@@ -1520,8 +1520,6 @@ def doctor_overview(request):
             overview_events['visit_type'] = 'ANC'
             overview_events['server_version'] = event["value"][-1]
             overview_events['id'] = event["id"]
-            # overview_events["entityid"] = entity[0]
-            # overview_events['id']=doc_id
             overview_data.append(overview_events)
         elif str(event['value'][0]) == 'child_illness' or str(event['value'][0]) == 'child_illness_edit':
 

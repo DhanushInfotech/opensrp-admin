@@ -1,28 +1,10 @@
-opensrp-plugin
-==============
+# opensrp-admin
+This is a standalone admin module to create and update Masters
 
-Installation
-------------
-* Postgres, couchdb should be running
+1. Manage user accounts
 
-##Git
+2. Maintain Doctors and Plan of Care Data
 
-        git clone https://github.com/DhanushInfotech/opensrp-plugin.git
+3. Manage Drugs and relevant info
 
-        cd opensrp-plugin
-
-        virtualenv opensrpweb
-
-        pip install -r requirement.txt
-
-        python manage.py syncdb --noinput
-
-        python manage.py migrate
-
-        python manage.py runserver
-
-==
-
-* run test
-
-        python manage.py test Masters
+NOTE: This is a standalone module within Opensrp application developed using Django Framework and yet to be improved further
