@@ -243,7 +243,7 @@ div.submit {
                         <label class="required" for="id_location_name">Location name:<span style="color:red">&nbsp;*</span></label>
 
                            <input type="hidden" value="0" name="id">
-                             <input class="vTextField" id="id_location_name"    name="lname" value="" data-val="true" data-val-required="Location name cannot be empty"  data-val-regex="Only characters allowed" data-val-regex-pattern="^[a-zA-Z ]*$"  data-val-remote-url="/locationvalidate/" data-val-remote-additionalfields="*.id,*.lname" data-val-remote="Location with this name already registered"/>
+                             <input class="vTextField" id="id_location_name" name="lname" value="" data-val="true" data-val-required="Location name cannot be empty"  data-val-regex="Only characters allowed" data-val-regex-pattern="^[a-zA-Z ]*$"  data-val-remote-url="/locationvalidate/" data-val-remote-additionalfields="*.id,*.lname" data-val-remote="Location with this name already registered"/>
                         <span class="field-validation-valid" data-valmsg-for="lname" data-valmsg-replace="true"></span>
                        
 
@@ -255,7 +255,7 @@ div.submit {
         <div class="form-row field-status">
                 <div class="checkbox-row">
                         <input checked="checked" id="status" name="status" type="checkbox" />
-                        <label class="vCheckboxLabel" for="id_status">active</label>
+                        <label class="vCheckboxLabel" for="id_status">active</label> 
                 </div>
             
         </div>
@@ -266,8 +266,8 @@ div.submit {
 
 
 <div class="submit-row">
-<button type="submit" class="btn btn-success" id="advance-save-button">save</button>
-<button type="button" class="btn btn-success" id="advance-cancel-button" onclick="window.location='/admin/Masters/locationtab/'">cancel</button>
+<button type="button" class="btn btn-success" id="advance-cancel-button" onclick="window.location='/admin/Masters/locationtab/add/'">Save and another</button>
+    <button type="submit" class="default" value="Save" id="advance-save-button" style=background:#7ca0c7>Save</button>
 </div>
 
 </form></div>
@@ -397,7 +397,49 @@ $("document").ready(function(){
         }
        
         });
+
+
+        $("document").ready(function(){
+        $("#advance-cancel-button").on('click', function(){        // body...
+        if ($("form").valid()) {
+            
+            var country = $("select[name=country_name]").val();
+            //alert(country)
+            var county = $("select[name=county_name]").val();
+            //alert(county)
+            var district = $("select[name=district_name]").val();
+            //alert(district)
+            var subdistrict = $("select[name=subdistrict_name]").val();
+            //alert(subdistrict)
+            var location = document.getElementById("id_location_name").value;
+            //alert(location)
+            var active=document.getElementById('status').checked==true ? "true" :"false";
+            $.ajax({
+
+                url: "/savelocation/?country="+ country +"&county="+ county +"&district="+ district+"&subdistrict="+ subdistrict+"&location="+ location+"&active="+active,
+                type: 'GET',
+                acceptType: "json",
+                success: function (result) {
+                if (result.error){
+                    
+                   
+                    for (var key in result.response.keys()){
+                        $("#id_"+key).after("<p class='error'>"+result.response[key]+"</p>")
+                    }
+
+                }else{
+                    
+                    window.location='/admin/Masters/locationtab/add/';
+                }
+                }
+
+            });
+        }
+       
+        });
+
 })
+});
 </script>
 
 

@@ -95,7 +95,32 @@ $(function  () {
 $(".paginator").text($(".paginator").text() + "RECORDS");
   }
 
+  if ($(".historylink")!=undefined) {
 
+$(".historylink").text($(".historylink").hide());
+  }
+
+
+  if ($(".success")!=undefined) {
+
+$(".success").text($(".success").text() + "ADDING RECORDS SUCCESFULLy RECORDS");
+  }
+
+/*  if ($(".historylink")!=undefined) {
+
+$(".historylink").text($(".historylink").hide());
+  }*/
+
+/*  if ($(".success")!=undefined) {
+
+$(".success").text( "Record added/modified successfully");
+  }*/
+
+/*    if ($(".messagelist")!=undefined) {
+    
+$(".messagelist").text($(".messagelist").text() + "RECORDS Aded/modified successfully");
+  }
+*/
 var msg;
 if (window.location.href.indexOf("done") > -1) {
 msg=$("#content>p").text();
@@ -116,6 +141,17 @@ if (window.location.href.indexOf("password_change") > -1) {
 
 
     });
+}
+if ($("input[name='_continue']")!=undefined) {
+
+$("input[name='_continue']").text($("input[name='_continue']").hide());
+  }
+
+var text;
+if (window.location.href.indexOf("done") > -1) {
+text=$("#container>ul>li").text('reacords addong');
+$(".success").html(msg +" " +"<a href='/admin/Masters/'>RECORDS ADDING SUCCESFULLy</a>");
+$(".breadcrumbs").hide();
 }
 
 })

@@ -254,7 +254,7 @@ div.submit {
 
 <div class="submit-row">
 <button type="submit" class="btn btn-success" id="advance-save-button">save</button>
-<button type="button" class="btn btn-success" id="advance-cancel-button"  onclick="window.location='/admin/Masters/subdistricttab/'">cancel</button>
+<button type="button" class="btn btn-success" id="advance-cancel-button">save and add another</button>
 </div>
 
 </form></div>
@@ -370,6 +370,50 @@ function GetRecordId(words) {
         
         });
 })
+
+$("document").ready(function(){
+        $("#advance-cancel-button").on('click', function(){        // body...
+        if ($("form").valid()) {
+
+            
+            var country = $("select[name=country_name]").val();
+            //alert(country)
+            var county = $("select[name=county_name]").val();
+            //alert(county)
+            var district = $("select[name=district_name]").val();
+            //alert(district)
+            var subdistrict = document.getElementById("id_subdistrict_name").value;
+            //alert(subdistrict)
+            var active=document.getElementById('status').checked==true ? "true" :"false";
+
+            $.ajax({
+
+                url: "/updatesubdistrict/?country="+ country +"&county="+ county +"&district="+ district+"&subdistrict="+ subdistrict+"&active="+active,
+                type: 'GET',
+                acceptType: "json",
+                success: function (result) {
+                if (result.error){
+                    
+                    for (var key in result.response.keys()){
+                        $("#id_"+key).after("<p class='error'>"+result.response[key]+"</p>")
+                    }
+
+                }else{
+                    
+                    window.location='/admin/Masters/subdistricttab/add/';
+                }
+                }
+
+            });
+
+        }
+        
+        });
+})
+
+
+
+
 </script>
 
 

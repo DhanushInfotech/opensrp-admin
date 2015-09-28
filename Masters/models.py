@@ -714,7 +714,7 @@ class AppConfiguration(models.Model):
                ('Heart-related-diseases', 'Heart-related-diseases'),
                ('Diabetes', 'Diabetes'))
     #id = models.IntegerField(primary_key=True)  # AutoField?
-    country_name = models.ForeignKey(CountryTb, db_column='country_name',limit_choices_to={'active': True}, unique=True)
+    country_name = models.ForeignKey(CountryTb, db_column='country_name',limit_choices_to={'active': True})
     wife_age_min = models.PositiveIntegerField(help_text="Enter min age in years")
     wife_age_max = models.PositiveIntegerField(help_text="Enter max age in years")
     husband_age_min = models.PositiveIntegerField(help_text="Enter min age in years")
@@ -748,8 +748,8 @@ class FormFields(models.Model):
         #managed = False
         unique_together = ("country", "form_name",)
         db_table = "form_fields"
-        verbose_name_plural="FORM FIELDS"
-        verbose_name="FORM FIELDS"
+        verbose_name_plural="FORMFIELDS"
+        verbose_name="FORMFIELDS"
 
 class VisitConfiguration(models.Model):
     #id = models.IntegerField(primary_key=True)  # AutoField?
@@ -766,19 +766,3 @@ class VisitConfiguration(models.Model):
         db_table = 'visit_configuration'
         verbose_name_plural="VISIT CONFIGURATION"
         verbose_name="VISIT CONFIGURATION"
-
-class AncDue(models.Model):
-#    id = models.IntegerField(unique=True)
-    entityid = models.CharField(primary_key=True, max_length=200)
-    patientnum = models.CharField(max_length=200, blank=True)
-    anmnum = models.CharField(max_length=200, blank=True)
-    visittype = models.CharField(max_length=200, blank=True)
-    visitno = models.IntegerField(blank=True, null=True)
-    lmpdate = models.CharField(max_length=200, blank=True)
-    womenname = models.CharField(max_length=200, blank=True)
-    visitdate = models.CharField(max_length=200, blank=True)
-
-    class Meta:
-        managed = False
-        db_table = 'anc_due'
-

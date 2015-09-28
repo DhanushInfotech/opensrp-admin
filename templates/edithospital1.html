@@ -272,7 +272,7 @@ div.submit {
 
                     <label class="required" for="parent_hospital">Parent Hospital:<span id="parenthosp-span"style="color:red">&nbsp;*</span></label>
 
-                       <select id="parent_hospital" name="parent_hosp" value="{{location}}" data-val="true" data-val-required="parenthospital cannot be empty">
+                       <select id="parent_hospital" name="parent_hosp" value="{{location}}" data-val="true">
                        {% for p in parenthos%}
                         <option value="{{p}}">{{p}}</option>
                        {% endfor %}
@@ -292,6 +292,10 @@ div.submit {
                <input type="checkbox" checked="checked" value="{{v}}" name='village' id="village">
                {{v}}
                {% endfor %}
+               {% for r in rvillages%}
+               <input type="checkbox"  value="{{r}}" name='village' id="village">
+               {{r}}
+               {% endfor %}
                </div>
         </div>
 
@@ -306,7 +310,7 @@ div.submit {
 </div>
 <div class="submit-row">
 <button type="submit" class="btn btn-success"   id="advance-save-button">save</button>
-<button type="button" class="btn btn-success" id="advance-cancel-button">cancel</button>
+<button type="button" class="btn btn-success" id="advance-cancel-button">save and add another</button>
 </div>
 
 </form></div>
@@ -580,10 +584,70 @@ $("document").ready(function(){
         }
        
     });
-    $("#advance-cancel-button").on('click', function(){
+/*    $("#advance-cancel-button").on('click', function(){
         window.location="/admin/Masters/healthcenters/";
-    });
+    });*/
 })
+
+
+$("document").ready(function(){
+        $("#advance-cancel-button").on('click', function(){        // body...
+        if ($("form").valid()) {
+            var hosname = document.getElementById("id_hospital_name").value;
+            //alert(hosname)
+            var hostype = $("select[name=hospital_type]").val();
+            //alert(hostype)
+            var address = document.getElementById("id_address_name").value;
+            //alert(address)
+            var country= $("select[name=country_name]").val();
+            //alert(country)
+            var county= $("select[name=county_name]").val();
+            //alert(county)
+            var district= $("select[name=district_name]").val();
+            //alert(district)
+            var subdistrict= $("select[name=subdistrict_name]").val();
+            //alert(subdistrict)
+          //  var location= $("select[name=village_location]").val();
+            //alert(location)
+            var parenthospital = $("select[name=parent_hosp]").val();
+            //alert(parenthospital)
+            var villages = [];
+            $.each($("input[name='village']:checked"), function(){
+                //alert(villages.push($(this).val()))
+                villages.push($(this).val());
+            });
+            villages=villages.join(",")
+            //alert(villages)
+            var active=document.getElementById('status').checked==true ? "true" :"false";
+            $.ajax({
+
+                url: "/updatehospital/?name="+hosname+ "&type="+hostype+"&add="+address+"&hos_country="+country+"&hos_county="+county+"&hos_district="+district+"&hos_subdistrict="+subdistrict+"&parent_hos="+parenthospital+"&hos_village="+villages+"&active="+active,
+                type: 'GET',
+                acceptType: "json",
+                success: function (result) {
+                if (result.error){
+                    
+                    for (var key in result.response.keys()){
+                        $("#id_"+key).after("<p class='error'>"+result.response[key]+"</p>")
+                    }
+
+                }else{
+                    
+                    window.location='/admin/Masters/healthcenters/add/';
+                }
+                }
+
+            });
+
+        }
+       
+    });
+/*    $("#advance-cancel-button").on('click', function(){
+        window.location="/admin/Masters/healthcenters/";
+    });*/
+})
+
+
 </script>
 
 

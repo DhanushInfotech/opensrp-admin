@@ -133,8 +133,8 @@ div.submit {
 <div class="breadcrumbs">
 <a href="/admin/">Home</a>
 &rsaquo; <a href="/admin/Masters/">Masters</a>
-&rsaquo; <a href="/admin/Masters/usermasters/">UserMaintenance</a>
-&rsaquo; Add UserMaintenance
+&rsaquo; <a href="/admin/Masters/usermasters/">UserMasters</a>
+&rsaquo; Add UserMasters
 </div>
 
     <!-- Content -->
@@ -166,7 +166,7 @@ div.submit {
                                 <option value="{{x}}" >{{x}}</option>
                                 {% endfor %}-->
                                 <option value="">select</option>
-                                <option value="ANM">Health Worker</option>
+                                <option value="ANM">ANM</option>
                                 <option value="DOC">Doctor</option>
                             </select>
                             <span class="field-validation-valid" data-valmsg-for="user_role" data-valmsg-replace="true"></span>
@@ -193,15 +193,25 @@ div.submit {
                         </div>
             
         </div>
-        <div class="form-row field-user_pwd">
+        <div class="form-row field-password">
 
                         <div>
-                        <label class="required" for="id_user_pwd">Password:<span style="color:red">&nbsp;*</span></label>
 
-                         <input type="password" class="vTextField" id="id_user_pwd" name="id_user_pwd" value="" data-val="true" data-val-required="Pasword cannot be empty" minlength="6" maxlength="10"/>
-                          <span class="field-validation-valid" data-valmsg-for="id_user_pwd" data-valmsg-replace="true" ></span>
+                        <label class="required" for="id_user_pwd">Password:<span style="color:red">&nbsp;*</span></label>
+                        <input type="password" class="vTextField" id="id_user_pwd" name="user_pwd"  data-val="true" data-val-required="Password cannot be empty"  maxlength="10" minlength="6" />
+                        <span class="field-validation-valid" data-valmsg-for="user_pwd" data-valmsg-replace="true" ></span>
                         </div>
-            
+
+        </div>
+        <div class="form-row field-user_conf_pwd">
+
+                        <div>
+                        <label class="required" for="user_conf_pwd">Confirm Password:<span style="color:red">&nbsp;*</span></label>
+                        <input type="password" class="vTextField" id="id_user_conf_pwd" name="user_conf_pwd"  data-val="true" data-val-required="Confirm Password cannot be empty"  maxlength="10" minlength="6" data-val-equalto="Password doesn't match!" data-val-equalto-other="*.user_pwd"/>
+
+                          <span class="field-validation-valid" data-valmsg-for="user_conf_pwd" data-valmsg-replace="true"></span>
+                        </div>
+
         </div>
         <div class="form-row field-user_phone_num">
             
@@ -305,7 +315,7 @@ div.submit {
 
                 </div>
         </div>
-        <div class="form-row field-hosp_name" id="dv-hosp" style="display:none">
+         <div class="form-row field-hosp_name" id="dv-hosp" style="display:none">
                 <div>
 
 
@@ -328,7 +338,7 @@ div.submit {
                         <label class="vCheckboxLabel" for="id_status">active</label>
                 </div>
 
-        </div>
+
 </div>
  
         
@@ -337,8 +347,9 @@ div.submit {
 </fieldset>
 
 <div class="submit-row">
-<button type="submit" class="btn btn-success"   id="advance-save-button" >save</button>
-<button type="button" class="btn btn-success" id="advance-cancel-button">cancel</button>
+
+<button type="button" class="btn btn-success" id="advance-cancel-button">Save and add another</button>
+<button type="submit" class="btn btn-success"   id="advance-save-button" >Save</button>
 </div>
 </div>
 </form></div>
@@ -629,10 +640,83 @@ var active=document.getElementById('status').checked==true ? "true" :"false";
             //}  
     });
 
-    $("#advance-cancel-button").on('click', function(){
-        window.location="/admin/Masters/usermasters/";
-    });
+
 })
+
+$("document").ready(function(){
+
+    $("#advance-cancel-button").on('click', function(){
+
+        if ($("form").valid()) {
+
+    //alert("hi")
+
+            var role = document.getElementById("user_role").value;
+            //alert(role);
+            var userid=document.getElementById("id_user_id").value;
+            //alert(userid);
+            var ufname=document.getElementById("id_user_fname").value;
+            //alert(ufname);
+            var lname=document.getElementById("id_user_lname").value;
+            //alert(lname);
+            var upwd=document.getElementById("id_user_pwd").value;
+            //alert(upwd);
+            var pnum=document.getElementById("id_user_phnum").value;
+            //alert(pnum);
+            var mail=document.getElementById("id_user_email").value;
+            //alert(mail);
+            var ctry=document.getElementById("country").value;
+            //alert(ctry);
+            var cty=document.getElementById("id_county_name").value;
+            //alert(cty);
+            var dist=document.getElementById("id_district_name").value;
+            //alert(dist);
+            var sub_dist=document.getElementById("id_subdistrict_name").value;
+            //alert(sub_dist);
+            var sub_ctr=document.getElementById("id_sub_center").value;
+            //alert(sub_ctr);
+            var hosp=document.getElementById("id_hosp_name").value;
+            //alert(hosp);
+
+            var villages = [];
+            $.each($("input[name='village']:checked"), function(){
+                //alert(villages.push($(this).val()))
+                villages.push($(this).val());
+            });
+            villages=villages.join(",")
+
+        //debugger;
+            // var active = [];
+            // $.each($("input[name='status']:checked"), function(){
+            //     active.push($(this).val());
+            // });
+var active=document.getElementById('status').checked==true ? "true" :"false";
+
+            $.ajax({
+                url: "/saveusermaintenance/?userrole="+role +"&userid="+ userid +"&first_name="+ ufname +"&last_name="+lname+"&password="+ upwd +"&mobile="+ pnum+"&village="+ villages + "&email="+ mail +"&country_name="+ ctry + "&county_name="+ cty + "&district_name="+ dist +"&subdistrict_name="+ sub_dist+"&subcenter_name="+ sub_ctr + "&hospitals="+hosp+"&active="+active,
+                type: "GET",
+                dataType: "json",
+                success: function(result){
+
+                    if (result.error){
+
+                    for (var key in result.response.keys()){
+                        $("#id_"+key).after("<p class='error'>"+result.response[key]+"</p>")
+                    }
+
+                }else{
+
+                    window.location='/admin/Masters/usermasters/add/';
+
+            }
+            }
+
+        });
+
+        }
+    })
+
+});
 
 function switchControls(val)
 {
