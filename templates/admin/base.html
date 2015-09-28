@@ -142,10 +142,6 @@ if (window.location.href.indexOf("password_change") > -1) {
 
     });
 }
-if ($("input[name='_continue']")!=undefined) {
-
-$("input[name='_continue']").text($("input[name='_continue']").hide());
-  }
 
 var text;
 if (window.location.href.indexOf("done") > -1) {
@@ -153,6 +149,12 @@ text=$("#container>ul>li").text('reacords addong');
 $(".success").html(msg +" " +"<a href='/admin/Masters/'>RECORDS ADDING SUCCESFULLy</a>");
 $(".breadcrumbs").hide();
 }
+
+
+  if ($("input[name='_continue']")!=undefined) {
+
+$("input[name='_continue']").text($("input[name='_continue']").hide());
+  }
 
 })
 </script>
