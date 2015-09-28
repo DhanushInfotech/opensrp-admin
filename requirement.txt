@@ -1,0 +1,7 @@
+argparse==1.2.1
+pip==1.5.4
+setuptools==2.2
+wsgiref==0.1.2
+django==1.7.1
+django-multiselectfield==0.1.3
+psycopg2==2.5
