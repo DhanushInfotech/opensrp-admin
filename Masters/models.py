@@ -6,7 +6,6 @@ from django.conf import settings
 from django.db.models.signals import post_save
 import hashlib
 import commands
-from smart_selects.db_fields import ChainedForeignKey
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from multiselectfield import MultiSelectField
 

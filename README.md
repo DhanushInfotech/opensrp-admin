@@ -24,6 +24,10 @@ Installation
 
         virtualenv opensrpweb
 
+        sudo apt-get update
+
+        sudo apt-get install libpq-dev python-dev
+
         pip install -r requirement.txt
 
         python manage.py syncdb --noinput
