@@ -37,7 +37,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Masters',
-    'smart_selects',
     'multiselectfield',
 )
 
@@ -65,7 +64,6 @@ DATABASES = {
         'NAME': 'drishti',
         'USER': 'dhanush',
         'PASSWORD': 'dhanush',
-        #'HOST': '10.10.11.79',
         'HOST': '202.153.34.169',
         'PORT': '5432',
         'OPTIONS': {
