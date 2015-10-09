@@ -282,11 +282,11 @@ div.submit {
                 },
             submitHandler: function (form) {
             var country = $("select[name=country_name]").val();
-            alert(country)
+            //alert(country)
             var hosname = document.getElementById("id_hospital_name").value;
-            alert(hosname)
+            //alert(hosname)
             var hostype = $("select[name=hospital_type]").val();
-            alert(hostype)
+            //alert(hostype)
             var address = $("select[name=address]").val();
             var villages = [];
             $.each($("input[name='village']:checked"), function(){            
@@ -309,7 +309,7 @@ div.submit {
                 success: function (result) {
                 if (result.error){
                     // $("p.error").remove();
-                    alert('hi');
+                    //alert('hi');
                     for (var key in result.response.keys()){
                         $("#id_"+key).after("<p class='error'>"+result.response[key]+"</p>")
                     }

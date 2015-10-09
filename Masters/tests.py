@@ -1,5 +1,7 @@
 from django.test import TestCase
 from Masters.models import *
+# from django.test import Client
+# from .import views
 
 class CountryTbTestCase(TestCase):
     def setUp(self):
@@ -72,7 +74,6 @@ class AppConfigurationTestCase(TestCase):
     	configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",escalation_schedule="2")
     	self.assertEqual(configuration.wife_age_max,'60')
     	self.assertNotEqual(configuration.wife_age_min,'35')
-
 class ICD10TestCase(TestCase):
     def setUp(self):
         ICD10.objects.create(ICD10_Chapter="dhanush",ICD10_Code="1245",ICD10_Name="nurse")
@@ -92,7 +93,8 @@ class DirectionsTestCase(TestCase):
         directions = Directions.objects.get(directions="before breakfast")
         self.assertEqual(directions.directions,'before breakfast')
         self.assertEqual(len(directions.directions),16)
-
+        print directions.directions
+        print len(directions.directions)
 class DosageTestCase(TestCase):
     def setUp(self):
         Dosage.objects.create(dosage="500mg")
@@ -125,6 +127,11 @@ class DrugInfoTestCase(TestCase):
         self.assertNotEqual(drug.child_illness,'Cough')
         self.assertEqual(len(drug.drug_name),5) 
 
+class DrugApi(TestCase):
+    def test_create_investigator(self):
+        response = self.client.get("/druginfo/")
+        self.failUnlessEqual(response.status_code, 200)
+
 class InvestigationsTestCase(TestCase):
     def test_investigation(self):
         investigation = Investigations.objects.create(service_group_name="Radiology",investigation_name="minor dressing")
@@ -149,3 +156,15 @@ class UserMastersTestCase(TestCase):
         users = UserMasters.objects.create(user_role="ANM",user_id="anm",name="sudheer",password="sudheer",confirm_password="sudheer",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",subcenter=self.subcenter,villages="YPL",lastname="sandi",hospital=self.hospital,county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
         self.assertEqual(users.user_role,'ANM')
 
+class AuthApi(TestCase):
+    def test_create_investigator(self):
+        user = 'anm'
+        password="sudheer"
+        response = self.client.get("/auth/", data={'userid': user,'pwd': password})
+        self.failUnlessEqual(response.status_code, 200)
+
+class AncDueTestCase(TestCase):
+    def setUp(self):
+        anc = AncDue.objects.create(entityid="1234568",patientnum="9494022013",anmnum="8121337675",visittype="anc_visit",visitno="1",lmpdate="2015-07-25",womenname="sandya",visitdate="2015-10-17",anmid="anm111")
+        self.assertEqual(anc.womenname,'sandya')
+        self.assertEqual(len(anc.womenname),6)
