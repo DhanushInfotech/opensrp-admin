@@ -347,7 +347,7 @@ if (!village_val) {
 }
     $("#country").on('change', function(e){
         var dev = $(e.currentTarget).val();
-        alert(dev)
+        //alert(dev)
         $.ajax({
             url:"/county/?country_name="+ dev,
             type: "GET",
@@ -357,6 +357,16 @@ if (!village_val) {
                 $('#id_district_name').empty();
                  $('#id_subdistrict_name').empty();
                   $("#id_county_name").append($('<option value="">select</option>'))
+                  $('#parent_hospital').empty();
+                   $('#hospitaltype').empty();
+                   $('#village-select').empty();
+                  $('#hospitaltype').append($('<option value="">select</option>'))
+                  $('#hospitaltype').append($('<option value="Country">Country</option>'))
+                  $('#hospitaltype').append($('<option value="County">County</option>'))
+                  $('#hospitaltype').append($('<option value="District">District</option>'))
+                  $('#hospitaltype').append($('<option value="SubDistrict">SubDistrict</option>'))
+                  $('#hospitaltype').append($('<option value="PHC">PHC</option>'))
+                  $('#hospitaltype').append($('<option value="Subcenter">Subcenter</option>'))
                 $.each(result.res, function(key, valtext){
                     $('#id_county_name').append($('<option>', {
                         value: valtext,
@@ -371,7 +381,7 @@ if (!village_val) {
  $("document").ready(function(){
     $("#id_county_name").on('change', function(e){
         var county = $(e.currentTarget).val();
-        alert(county)
+        //alert(county)
         $.ajax({
             url:"/district/?county_name="+ county,
             type: "GET",
