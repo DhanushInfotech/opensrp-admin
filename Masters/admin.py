@@ -12,14 +12,6 @@ from django.contrib.admin.templatetags.admin_modify import submit_row as origina
 from django.http import HttpResponseRedirect
 from django.utils.encoding import force_unicode
 
-# @register.inclusion_tag('admin/submit_line.html', takes_context=True)
-# def submit_row(context):
-#     ctx = original_submit_row(context)
-#     ctx.update({
-#         'show_save_and_add_another': context.get('show_save_and_add_another', ctx['show_save_and_add_another']),
-#         })
-#     return ctx
-
 class DrugInfoAdmin(admin.ModelAdmin):
     list_display= ('drug_name','frequency','dosage','direction','active',)
     search_fields = ('drug_name',)

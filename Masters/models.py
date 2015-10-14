@@ -224,7 +224,7 @@ class Frequency(models.Model):
     class Meta:
         db_table = 'frequency'
         verbose_name_plural="FREQUENCIES"
-	verbose_name='FREQUIENCIES'
+	verbose_name='FREQUENCY'
 
     def __unicode__(self):
         return unicode(self.number_of_times)
@@ -265,7 +265,7 @@ class Investigations(models.Model):
 
     class Meta:
         db_table = 'investigation'
-        verbose_name_plural = "INVESTIGATION"
+        verbose_name_plural = "INVESTIGATIONS"
 	verbose_name='INVESTIGATION'
 
     def __unicode__(self):
@@ -378,7 +378,7 @@ class UserMasters(models.Model):
 @receiver(post_save, sender=UserMasters)
 def usermaintenance_post(sender,instance,**kwargs):
     user_role = settings.USER_ROLE[str(instance.user_role)]
-    #print 
+    #print
     user_curl = "curl -s -H -X GET http://202.153.34.169:5984/drishti/_design/DrishtiUser/_view/by_username?key="+"%22"+str(instance.user_id)+"%22"
     user_data = commands.getoutput(user_curl) 
     output = json.loads(user_data)
@@ -481,7 +481,7 @@ class HealthCenters(models.Model):
     hospital_type = models.CharField(max_length=200)
     hospital_address = models.CharField(max_length=200)
     country_name = models.ForeignKey(CountryTb, db_column='country_name',limit_choices_to={'active': True})
-    county_name = models.ForeignKey(CountyTb, db_column='county_name',null=True,blank=True,limit_choices_to={'active': True})
+    county_name = models.ForeignKey(CountyTb, db_column='county_name',null=True,limit_choices_to={'active': True})
     district_name = models.ForeignKey(Disttab, db_column='district_name',null=True,limit_choices_to={'active': True})
     subdistrict_name = models.ForeignKey(SubdistrictTab, db_column='subdistrict_name',null=True,limit_choices_to={'active': True})
     #location = models.CharField(max_length=200)
@@ -579,6 +579,10 @@ class FormFields(models.Model):
         #managed = False
         unique_together = ("country", "form_name",)
         db_table = "form_fields"
-        verbose_name_plural="FORMFIELDS"
-        verbose_name="FORMFIELDS"
+        verbose_name_plural="FORM FIELDS"
+        verbose_name="FORM FIELDS"
+    def __unicode__(self):
+        field = str(self.form_name).replace("_"," ")
+        return '%s form' %(field)
+
 
