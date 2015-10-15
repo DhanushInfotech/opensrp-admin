@@ -344,15 +344,34 @@ $("document").ready(function(){
             type: "GET",
             dataType: "json",
             success: function(result){
+
+                $('#id_county_name').empty();
+                $('#id_district_name').empty();
+                 $('#id_subdistrict_name').empty();
+                  $("#id_county_name").append($('<option value="">select</option>'))
+                  $('#parent_hospital').empty();
+                   $('#hospitaltype').empty();
+                   $('#village-select').empty();
+                  $('#hospitaltype').append($('<option value="">select</option>'))
+                  $('#hospitaltype').append($('<option value="Country">Country</option>'))
+                  $('#hospitaltype').append($('<option value="County">County</option>'))
+                  $('#hospitaltype').append($('<option value="District">District</option>'))
+                  $('#hospitaltype').append($('<option value="SubDistrict">SubDistrict</option>'))
+                  $('#hospitaltype').append($('<option value="PHC">PHC</option>'))
+                  $('#hospitaltype').append($('<option value="Subcenter">Subcenter</option>'))
+                $.each(result.res, function(key, valtext){
+                    $('#id_county_name').append($('<option>', {
+                        value: valtext,
+                        text : valtext                
               
-                 $('#id_county_name').empty();
+/*                 $('#id_county_name').empty();
                 $('#id_district_name').empty();
                  $('#id_subdistrict_name').empty();
                 $("#id_county_name").append($('<option value="">select</option>'))
                 $.each(result.res, function(key, valtext){
                     $('#id_county_name').append($('<option>', {
                         value: valtext,
-                        text : valtext
+                        text : valtext*/
                     }));
                 });
             }

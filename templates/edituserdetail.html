@@ -378,7 +378,7 @@ div.submit {
 </fieldset>
 
 <div class="submit-row">
-<button type="button" class="btn btn-success" id="advance-cancel-button">Save and another</button>
+<button type="button" class="btn btn-success" id="advance-cancel-button">Save and add another</button>
 <button type="submit" class="btn btn-success"   id="advance-save-button" >Save</button>
 <button type="button" class="btn btn-success" id="btnResetPwd" style="background:#7ca0c7">Reset Password </button>
 
@@ -453,14 +453,26 @@ $('#status').val()=='true' ?  $('#status').attr('checked','checked') :  $('#stat
             dataType: "json",
             success: function(result){
                 $('#id_county_name').empty();
+                $('#id_hosp_name').empty();
                 $('#id_district_name').empty();
                 $('#id_subdistrict_name').empty();
-                $('#id_hosp_name').empty();
-                $("#id_county_name").append($('<option value="">select</option>'))                
-                $("#id_hosp_name").append($('<option value="">select</option>'))                
+                $('#village-select').empty(); 
+                $('#id_sub_center').empty();              
 
+                $("#id_county_name").append($('<option value="">select</option>'))
+                $("#id_hosp_name").append($('<option value="">select</option>'))
+                $("#id_district_name").append($('<option value="">select</option>'))
+                $("#id_subdistrict_name").append($('<option value="">select</option>'))
+                $("#id_sub_center").append($('<option value="">select</option>'))
                 $.each(result.res, function(key, valtext){
                     $('#id_county_name').append($('<option>', {
+                        value: valtext,
+                        text : valtext
+                    }));
+                });
+                
+                $.each(result.hospitals, function(key, valtext){
+                    $('#id_hosp_name').append($('<option>', {
                         value: valtext,
                         text : valtext
                     }));

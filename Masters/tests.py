@@ -1,6 +1,6 @@
 from django.test import TestCase
 from Masters.models import *
-# from django.test import Client
+from django.test import Client
 # from .import views
 
 class CountryTbTestCase(TestCase):
@@ -30,6 +30,7 @@ class DisttabTestCase(TestCase):
         district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="Prakasam")
         self.assertEqual(district.district_name,'Prakasam')
         self.assertEqual(len(district.district_name),8)
+
 
 class SubdistrictTabTestCase(TestCase):
     def setUp(self):
@@ -74,6 +75,7 @@ class AppConfigurationTestCase(TestCase):
     	configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",escalation_schedule="2")
     	self.assertEqual(configuration.wife_age_max,'60')
     	self.assertNotEqual(configuration.wife_age_min,'35')
+
 class ICD10TestCase(TestCase):
     def setUp(self):
         ICD10.objects.create(ICD10_Chapter="dhanush",ICD10_Code="1245",ICD10_Name="nurse")
@@ -93,8 +95,7 @@ class DirectionsTestCase(TestCase):
         directions = Directions.objects.get(directions="before breakfast")
         self.assertEqual(directions.directions,'before breakfast')
         self.assertEqual(len(directions.directions),16)
-        print directions.directions
-        print len(directions.directions)
+
 class DosageTestCase(TestCase):
     def setUp(self):
         Dosage.objects.create(dosage="500mg")
@@ -132,6 +133,28 @@ class DrugApi(TestCase):
         response = self.client.get("/druginfo/")
         self.failUnlessEqual(response.status_code, 200)
 
+class VitalApi(TestCase):
+    def test_create_investigator(self):
+    	visit = "123hkjqhdbkjash"
+        response = self.client.get("/vitalsdata/",data={'visitid': visit})
+        self.failUnlessEqual(response.status_code, 200)
+
+class DocoverviewApi(TestCase):
+    def test_create_investigator(self):
+    	o_visitid = "123hkjqhdbkjash"
+    	o_entityid = "adjashkdhaskjd"
+        response = self.client.get("/docoverview/",data={'o_visitid': o_visitid,'o_entityid':o_entityid})
+        self.failUnlessEqual(response.status_code, 200)
+
+class DocReferApi(TestCase):
+    def test_create_investigator(self):
+        doc_id="docid"
+        visitid = "visitid"
+        entityid = "entityid"
+        patientname = "patientname"
+        response = self.client.get("/doctor_refer/",data={'doc_id': doc_id,'visitid': visitid,'entityid': entityid,'patientname': patientname})
+        self.failUnlessEqual(response.status_code, 200)                
+
 class InvestigationsTestCase(TestCase):
     def test_investigation(self):
         investigation = Investigations.objects.create(service_group_name="Radiology",investigation_name="minor dressing")
@@ -160,7 +183,14 @@ class AuthApi(TestCase):
     def test_create_investigator(self):
         user = 'anm'
         password="sudheer"
-        response = self.client.get("/auth/", data={'userid': user,'pwd': password})
+        response = self.client.get("/auth/", data={'userid': user,'password': password})
+        self.failUnlessEqual(response.status_code, 200)
+
+class DocApi(TestCase):
+    def test_create_investigator(self):
+        user = 'anm'
+        password="sudheer"
+        response = self.client.get("/docinfo/", data={'doc_name': user,'pwd': password})
         self.failUnlessEqual(response.status_code, 200)
 
 class AncDueTestCase(TestCase):
@@ -168,3 +198,71 @@ class AncDueTestCase(TestCase):
         anc = AncDue.objects.create(entityid="1234568",patientnum="9494022013",anmnum="8121337675",visittype="anc_visit",visitno="1",lmpdate="2015-07-25",womenname="sandya",visitdate="2015-10-17",anmid="anm111")
         self.assertEqual(anc.womenname,'sandya')
         self.assertEqual(len(anc.womenname),6)
+  
+class SendSmsApi(TestCase):
+    def test_create_investigator(self):
+        phone_number = "9494022013"
+        msg = "Poc is given to the patient"
+        response = self.client.get("/sendsms/", data={'phone_number': phone_number,'msg': msg })        
+        self.failUnlessEqual(response.status_code, 200)
+
+class CountyApi(TestCase):
+    def setUp(self):
+        self.country=CountryTb.objects.create(country_name="India",country_code="91")
+    def test_create_investigator(self):
+        response = self.client.get("/county/", data={'country_name':self.country})
+        self.failUnlessEqual(response.status_code, 200)
+
+class PocUpdateApi(TestCase):
+    def test_create_investigator(self):
+        response = self.client.get("/sendsms/")
+        self.failUnlessEqual(response.status_code, 200)
+
+class DisttabApi(TestCase):
+    def setUp(self):
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+    def test_create_investigator(self):
+        response = self.client.get("/district/", data={'country_name':self.country,'county_name':self.county,'district_name':self.district})
+        self.failUnlessEqual(response.status_code, 200)
+
+class SubdistrictTabApi(TestCase):
+    def setUp(self):
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+        #self.hospitals_name = HealthCenters.objects.filter(county_name=county_obj,hospital_type='County',active=True).values_list('hospital_name')
+    def test_create_investigator(self):
+        response = self.client.get("/subdistrict/", data={'country_name':self.country,'county_name':self.county,'district_name':self.district,'subdistrict_name':self.subdistrict})
+        self.failUnlessEqual(response.status_code, 200)
+
+class LocationApi(TestCase):
+    def setUp(self):
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+        self.location = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+    def test_create_investigator(self):
+        response = self.client.get("/location/", data={'country_name':self.country,'county_name':self.county,'district_name':self.district,'subdistrict_name':self.subdistrict,'location_name':self.location})
+        self.failUnlessEqual(response.status_code, 200)
+        self.assertEquals(CountryTb.objects.count(),1)
+
+class LocationsApi(TestCase):
+    def test_create_investigator(self):
+        response = self.client.get("/location/")
+        self.failUnlessEqual(response.status_code, 200)
+
+class LoginTestCase(TestCase):
+
+    def test_login(self):
+        response = self.client.get('/admin/')
+        self.assertRedirects(response, '/admin/login/?next=/admin/')
+
+class LoginApi(TestCase):
+    def test_create_investigator(self):
+        response = self.client.get("/admin/login/?next=/admin/")
+        self.failUnlessEqual(response.status_code, 200)
+
