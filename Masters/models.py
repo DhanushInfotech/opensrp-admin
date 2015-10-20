@@ -9,167 +9,7 @@ import commands
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from multiselectfield import MultiSelectField
 
-class SchemaVersion(models.Model):
-    version_rank = models.IntegerField()
-    installed_rank = models.IntegerField()
-    version = models.CharField(max_length=50)
-    description = models.CharField(max_length=200)
-    type = models.CharField(max_length=20)
-    script = models.CharField(max_length=1000)
-    checksum = models.IntegerField(blank=True, null=True)
-    installed_by = models.CharField(max_length=30)
-    installed_on = models.DateTimeField()
-    execution_time = models.IntegerField()
-    success = models.BooleanField(default=True)
-
-    class Meta:
-
-        db_table = 'schema_version'
-
-class AuthGroup(models.Model):
-    #id = models.IntegerField(primary_key=True)  # AutoField?
-    name = models.CharField(unique=True, max_length=80)
-
-    class Meta:
-        managed = False
-        db_table = 'auth_group'
-
-
-class AuthGroupPermissions(models.Model):
-    #id = models.IntegerField(primary_key=True)  # AutoField?
-    group = models.ForeignKey(AuthGroup)
-    permission = models.ForeignKey('AuthPermission')
-
-    class Meta:
-        managed = False
-        db_table = 'auth_group_permissions'
-
-
-class AuthPermission(models.Model):
-    #id = models.IntegerField(primary_key=True)  # AutoField?
-    name = models.CharField(max_length=50)
-    content_type = models.ForeignKey('DjangoContentType')
-    codename = models.CharField(max_length=100)
-
-    class Meta:
-        managed = False
-        db_table = 'auth_permission'
-
-
-class AuthUser(models.Model):
-    #id = models.IntegerField(primary_key=True)  # AutoField?
-    password = models.CharField(max_length=128)
-    last_login = models.DateTimeField()
-    is_superuser = models.BooleanField(default=True)
-    username = models.CharField(unique=True, max_length=30)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
-    email = models.CharField(max_length=75)
-    is_staff = models.BooleanField(default=True)
-    is_active = models.BooleanField(default=True)
-    date_joined = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'auth_user'
-
-
-class AuthUserGroups(models.Model):
-    #id = models.IntegerField(primary_key=True)  # AutoField?
-    user = models.ForeignKey(AuthUser)
-    group = models.ForeignKey(AuthGroup)
-
-    class Meta:
-        managed = False
-        db_table = 'auth_user_groups'
-
-
-class AuthUserUserPermissions(models.Model):
-    #id = models.IntegerField(primary_key=True)  # AutoField?
-    user = models.ForeignKey(AuthUser)
-    permission = models.ForeignKey(AuthPermission)
-
-    class Meta:
-        managed = False
-        db_table = 'auth_user_user_permissions'
-
-class DjangoAdminLog(models.Model):
-    #id = models.IntegerField(primary_key=True)  # AutoField?
-    action_time = models.DateTimeField()
-    object_id = models.TextField(blank=True)
-    object_repr = models.CharField(max_length=200)
-    action_flag = models.SmallIntegerField()
-    change_message = models.TextField()
-    content_type = models.ForeignKey('DjangoContentType', blank=True, null=True)
-    user = models.ForeignKey(AuthUser)
-
-    class Meta:
-        managed = False
-        db_table = 'django_admin_log'
-
-
-class DjangoContentType(models.Model):
-    #id = models.IntegerField(primary_key=True)  # AutoField?
-    name = models.CharField(max_length=100)
-    app_label = models.CharField(max_length=100)
-    model = models.CharField(max_length=100)
-
-    class Meta:
-        managed = False
-        db_table = 'django_content_type'
-
-
-class DjangoMigrations(models.Model):
-   # id = models.IntegerField(primary_key=True)  # AutoField?
-    app = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    applied = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'django_migrations'
-
-
-class DjangoSession(models.Model):
-    session_key = models.CharField(primary_key=True, max_length=40)
-    session_data = models.TextField()
-    expire_date = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'django_session'
-
-
-class ServiceProvidedReportView(models.Model):
-    # id = models.IntegerField(primary_key=True)
-    anmidentifier = models.CharField(max_length=100, blank=True)
-    service_provided_type = models.CharField(max_length=100, blank=True)
-    indicator = models.CharField(max_length=100, blank=True)
-    service_date = models.DateField(blank=True, null=True)
-    village = models.CharField(max_length=100, blank=True)
-    subcenter = models.CharField(max_length=100, blank=True)
-    phc = models.CharField(max_length=100, blank=True)
-    taluka = models.CharField(max_length=100, blank=True)
-    district = models.CharField(max_length=100, blank=True)
-    state = models.CharField(max_length=100, blank=True)
-
-    class Meta:
-        managed = False
-        db_table = 'service_provided_report_view'
-
-
-class Token(models.Model):
-    # id = models.IntegerField(primary_key=True)  # AutoField?
-    nas_me = models.CharField(unique=True, max_length=100)
-    value = models.CharField(max_length=100)
-
-    class Meta:
-        managed = False
-        db_table = 'token'
-
-
 class DrugInfo(models.Model):
-   
     ANC = (('Pallor', 'Pallor'),
                ('Swelling / Edema', 'Swelling / Edema'),
                ('Bleeding', 'Bleeding'),
@@ -359,11 +199,11 @@ class UserMasters(models.Model):
     county = models.ForeignKey('CountyTb', db_column='county',null=True,blank=True,limit_choices_to={'active': True})
     district = models.ForeignKey('Disttab', db_column='district',null=True,limit_choices_to={'active': True})
     subdistrict = models.ForeignKey('SubdistrictTab', db_column='subdistrict',null=True,limit_choices_to={'active': True})
-    subcenter = models.ForeignKey('HealthCenters', db_column='subcenter',related_name='subcenter',limit_choices_to={'active': True})
+    subcenter = models.ForeignKey('HealthCenters', db_column='subcenter',related_name='subcenter',limit_choices_to={'active': True},null=True, blank=True)
     villages = models.CharField(max_length=200)
     lastname = models.CharField(max_length=200, blank=True)
     active = models.BooleanField(default=True)
-    hospital = models.ForeignKey('HealthCenters', db_column='hospital',limit_choices_to={'active': True})
+    hospital = models.ForeignKey('HealthCenters', db_column='hospital',limit_choices_to={'active': True},null=True, blank=True)
 
     class Meta:
         #db_table = 'user_masters_test'
@@ -540,26 +380,6 @@ class AncDue(models.Model):
     class Meta:
         db_table = 'anc_due'
 
-#class FormFields(models.Model):
-    #id = models.IntegerField(primary_key=True)  # AutoField?
-#    form_name = models.CharField(max_length=50, blank=True)
-#    field1 = models.CharField(max_length=50, blank=True)
- #   field2 = models.CharField(max_length=50, blank=True)
-#3  field3 = models.CharField(max_length=50, blank=True)
- #field4 = models.CharField(max_length=50, blank=True)
-  #  field5 = models.CharField(max_length=50, blank=True)
-   # country = models.ForeignKey(CountryTb, db_column='country', blank=True, null=True)
-
-    #class Meta:
-     #   db_table = 'form_fields'
-      #  verbose_name_plural="FORM FIELDS"
-        #verbose_name="FORM FIELD"
-
-    #def __unicode__(self):
-    #    return u'for %s' %self.country
-
-
-
 class FormFields(models.Model):
     FORMS = (("anc_registration","ANC Registration"),
              ("ec_registration","EC Registration"),
@@ -584,5 +404,21 @@ class FormFields(models.Model):
     def __unicode__(self):
         field = str(self.form_name).replace("_"," ")
         return '%s form' %(field)
+
+class VisitConfiguration(models.Model):
+    #id = models.IntegerField(primary_key=True)  # AutoField?
+    anc_visit1_from_week = models.IntegerField(blank=True, null=True)
+    anc_visit1_to_week = models.IntegerField(blank=True, null=True)
+    anc_visit2_from_week = models.IntegerField(blank=True, null=True)
+    anc_visit2_to_week = models.IntegerField(blank=True, null=True)
+    anc_visit3_from_week = models.IntegerField(blank=True, null=True)
+    anc_visit3_to_week = models.IntegerField(blank=True, null=True)
+    anc_visit4_from_week = models.IntegerField(blank=True, null=True)
+    anc_visit4_to_week = models.IntegerField(blank=True, null=True)
+    class Meta:
+        managed = False
+        db_table = 'visit_configuration'
+        verbose_name_plural="VISIT CONFIGURATION"
+        verbose_name="VISIT CONFIGURATION"
 
 

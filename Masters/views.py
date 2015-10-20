@@ -12,7 +12,7 @@ from django.conf import settings
 from django.db import connection
 from django.db.models import Q
 
-def get_drugdata(request):
+def druginfo(request):
     all_info=defaultdict(list)
     drug_details = DrugInfo.objects.all().values_list('drug_name','frequency__number_of_times','dosage__dosage','direction__directions')
     for drug in drug_details:
@@ -148,7 +148,7 @@ def docsms(workerph=None,patientph=None,worker_sms=None,patientsms=None):
     patient_sms_output = commands.getoutput(patient_sms_curl)
     return anm_sms_output,patient_sms_output
 
-def doctor_data(request):
+def docinfo(request):
     if request.method == "GET":
         doc_name= request.GET.get('docname',"")
         password = request.GET.get('pwd',"")
@@ -259,7 +259,7 @@ def doctor_data(request):
                 doc_id=row[-1]['id']
                 for childdata in row:
                     child_tags = ["dateOfBirth","childSigns","childSignsOther","immediateReferral","immediateReferralReason","reportChildDiseaseDate","reportChildDisease","reportChildDiseaseOther"
-                                ,"reportChildDiseasePlace","childTemperature","numberOfORSGiven","childReferral","anmPoc","isHighRisk","submissionDate","id"]
+                                ,"reportChildDiseasePlace","childTemperature","numberOfORSGiven","childReferral","anmPoc","isHighRisk","submissionDate","id","numberOfDaysCough","breathsPerMinute","daysOfDiarrhea","bloodInStool","vommitEveryThing","daysOfFever","sickVisitDate"]
                     f = lambda x: x[-1].get("value") if len(x)>0 else ""
                     fetched_dict = copyf(childdata["value"][1]["form"]["fields"],"name",child_tags)
                     visit["dateOfBirth"]=f(copyf(fetched_dict,"name","dateOfBirth"))
@@ -274,6 +274,13 @@ def doctor_data(request):
                     visit["childTemperature"]=f(copyf(fetched_dict,"name","childTemperature"))
                     visit["numberOfORSGiven"]=f(copyf(fetched_dict,"name","numberOfORSGiven"))
                     visit["childReferral"]=f(copyf(fetched_dict,"name","childReferral"))
+                    visit["numberOfDaysCough"]=f(copyf(fetched_dict,"name","numberOfDaysCough"))
+                    visit["breathsPerMinute"]=f(copyf(fetched_dict,"name","breathsPerMinute"))
+                    visit["daysOfDiarrhea"]=f(copyf(fetched_dict,"name","daysOfDiarrhea"))
+                    visit["bloodInStool"]=f(copyf(fetched_dict,"name","bloodInStool"))
+                    visit["vommitEveryThing"]=f(copyf(fetched_dict,"name","vommitEveryThing"))
+                    visit["daysOfFever"]=f(copyf(fetched_dict,"name","daysOfFever"))
+                    visit["sickVisitDate"]=f(copyf(fetched_dict,"name","sickVisitDate"))
                     visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
                     visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
                     visit["submissionDate"]=f(copyf(fetched_dict,"name","submissionDate"))
@@ -419,7 +426,17 @@ def doctor_data(request):
     end_res= json.dumps(display_result)
     return HttpResponse(end_res)
 
-def user_auth(request):
+def drug_info():
+    drug_result = defaultdict(list)
+    diseases = settings.DISEASES
+    for disease in diseases:
+        drug = DrugInfo.objects.filter(Q(anc_conditions__regex=str(disease)) | Q(pnc_conditions__regex=str(disease)) | Q(child_illness__regex=str(disease))).values_list('drug_name')
+        if len(drug)>0:
+            for d in drug:
+                drug_result[str(disease)].append(d[0])
+    return dict(drug_result)
+
+def auth(request):
     if request.method == 'GET':
         username = str(request.GET.get('userid',''))
         password = str(request.GET.get('pwd',''))
@@ -476,17 +493,9 @@ def user_auth(request):
     end_res= json.dumps(user_data)
     return HttpResponse(end_res)
 
-def drug_info():
-    drug_result = defaultdict(list)
-    diseases = settings.DISEASES
-    for disease in diseases:
-        drug = DrugInfo.objects.filter(Q(anc_conditions__regex=str(disease)) | Q(pnc_conditions__regex=str(disease)) | Q(child_illness__regex=str(disease))).values_list('drug_name')
-        if len(drug)>0:
-            for d in drug:
-                drug_result[str(disease)].append(d[0])
-    return dict(drug_result)
 
-def vitals_data(request):
+
+def vitalsdata(request):
     vital_readings=[]
     if request.method == 'GET':
         visitid = request.GET.get('visit','')
@@ -526,7 +535,7 @@ def vitals_data(request):
 def copyf(dictlist, key, valuelist):
       return [dictio for dictio in dictlist if dictio[key] in valuelist]
 
-def docrefer(request):
+def doctor_refer(request):
     if request.method=="GET":
         doc_id=request.GET.get("docid","")
         visitid = request.GET.get("visitid","")
@@ -581,7 +590,7 @@ def docrefer(request):
 
     return HttpResponse('Level upgraded')
 
-def send_sms(request):
+def sendsms(request):
     if request.method == "GET":
         phone_num = request.GET.get("tel","")
         msg = str(request.GET.get("message",""))
@@ -620,21 +629,6 @@ def get_hospital(request):
     res = []
     for a in address:
         res.append(str(a[0]))
-    result = {'res':res}
-    res = json.dumps(result)
-    return HttpResponse(res)
-
-def get_villages(request):
-    if request.method == "GET":
-        village= request.GET.get('villages',"")
-
-    elif request.method == "POST":
-        village= request.GET.get('villages',"")
-    villages = DimLocation.objects.filter(subcenter=str(village)).values_list('village')
-    res = []
-
-    for v in villages:
-        res.append(str(v[0]))
     result = {'res':res}
     res = json.dumps(result)
     return HttpResponse(res)
@@ -775,19 +769,6 @@ def hospital_validate(request):
     if len(hosp_login)>0 and hosp_id != hosp_login[0][0]:
         login = "false"
     return HttpResponse(login)
-
-def get_uservillage(request):
-
-    if request.method == "GET":
-        hospital_name = request.GET.get('hospital_name',"")
-    elif request.method == "POST":
-        hospital_name = request.GET.get('hospital_name',"")
-    villages = HospitalDetails.objects.filter(hospital_name=str(hospital_name)).values_list('village')
-    if len(villages) >0:
-        res = villages[0][0].split(',')
-    result = {'res':res}
-    res = json.dumps(result)
-    return HttpResponse(res)
 
 def data_list(current_values,all_data):
     data=[]
@@ -979,8 +960,6 @@ def save_usermaintenance(request):
         hospital_name = request.POST.get('hospitals','')
         active = str(request.POST.get('active',''))
 
-
-    
     pwd = hashlib.sha1()
     pwd.update(password)
     password = pwd.hexdigest()
@@ -994,7 +973,7 @@ def save_usermaintenance(request):
         district_obj = Disttab.objects.get(district_name=str(districtname))
         subdistrict_obj = SubdistrictTab.objects.get(subdistrict=str(subdistrictname))
         subcenter = HealthCenters.objects.get(hospital_name=str(subcentername))
-        village_details = UserMasters(user_role=str(userrole),user_id=str(userid),name=str(first_name),lastname=str(last_name),password=str(password),villages=str(village),phone_number=str(mobile),email=str(email),country=country_obj,county=county_obj,district=district_obj,subdistrict=subdistrict_obj,subcenter=subcenter,active=status)
+        village_details = UserMasters(user_role=str(userrole),user_id=str(userid),name=str(first_name),lastname=str(last_name),password=str(password),villages=str(village),phone_number=str(mobile),email=str(email),country=country_obj,county=county_obj,district=district_obj,subdistrict=subdistrict_obj,subcenter=subcenter,active=status,)
         village_details.save()
 
     elif str(userrole) == 'DOC':
@@ -1141,6 +1120,8 @@ def save_password(request):
         row_id = int(request.GET.get("id",""))
         password_name = request.GET.get("password","")
     user_data = UserMasters.objects.filter(id=row_id).values_list('user_id','user_role')
+    if len(user_data) == 0:
+        return HttpResponse('{"status":"Invalid user"}')
     user_id=str(user_data[0][0])
     user_role = settings.USER_ROLE[str(user_data[0][1])]
     pwd = hashlib.sha1()
@@ -1660,6 +1641,8 @@ def subcenter(request):
     elif request.method == "POST":
         location_name= request.POST.get('location',"")
     subcenter_data = HealthCenters.objects.filter(hospital_name=str(location_name),hospital_type='Subcenter',active=True).values_list('villages')
+    if len(subcenter_data)==0:
+        return HttpResponse('{"status":"Invalid location"}')
     res=[]
     if len(subcenter_data[0][0]) != 'null':
         res = subcenter_data[0][0].split(',')
@@ -1667,7 +1650,7 @@ def subcenter(request):
     res = json.dumps(result)
     return HttpResponse(res)
 
-def doctor_overview(request):
+def docoverview(request):
     if request.method == "GET":
         o_visitid = request.GET.get("visitid","")
         o_entityid =request.GET.get("entityid","")
@@ -1765,4 +1748,3 @@ def doctor_overview(request):
             overview_data.append(overview_events)
     end_res= json.dumps(overview_data)
     return HttpResponse(end_res)
-
