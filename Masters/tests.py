@@ -1,12 +1,11 @@
 from django.test import TestCase
 from Masters.models import *
 from django.test import Client
-# from .import views
+from Masters.views import *
 
 class CountryTbTestCase(TestCase):
     def setUp(self):
     	CountryTb.objects.create(country_name="India", country_code="91")
-    
     def test_country(self):
     	country = CountryTb.objects.get(country_name="India")
     	code = CountryTb.objects.get(country_code="91")
@@ -129,25 +128,25 @@ class DrugInfoTestCase(TestCase):
         self.assertEqual(len(drug.drug_name),5) 
 
 class DrugApi(TestCase):
-    def test_create_investigator(self):
+    def test_druginfo(self):
         response = self.client.get("/druginfo/")
         self.failUnlessEqual(response.status_code, 200)
 
 class VitalApi(TestCase):
-    def test_create_investigator(self):
+    def test_vitalsdata(self):
     	visit = "123hkjqhdbkjash"
         response = self.client.get("/vitalsdata/",data={'visitid': visit})
         self.failUnlessEqual(response.status_code, 200)
 
 class DocoverviewApi(TestCase):
-    def test_create_investigator(self):
+    def test_docoverview(self):
     	o_visitid = "123hkjqhdbkjash"
     	o_entityid = "adjashkdhaskjd"
         response = self.client.get("/docoverview/",data={'o_visitid': o_visitid,'o_entityid':o_entityid})
         self.failUnlessEqual(response.status_code, 200)
 
 class DocReferApi(TestCase):
-    def test_create_investigator(self):
+    def test_doctor_refer(self):
         doc_id="docid"
         visitid = "visitid"
         entityid = "entityid"
@@ -178,16 +177,16 @@ class UserMastersTestCase(TestCase):
     def test_usermasters(self):
         users = UserMasters.objects.create(user_role="ANM",user_id="anm",name="sudheer",password="sudheer",confirm_password="sudheer",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",subcenter=self.subcenter,villages="YPL",lastname="sandi",hospital=self.hospital,county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
         self.assertEqual(users.user_role,'ANM')
-
+#Workfromhere
 class AuthApi(TestCase):
-    def test_create_investigator(self):
+    def test_auth(self):
         user = 'anm'
         password="sudheer"
         response = self.client.get("/auth/", data={'userid': user,'password': password})
         self.failUnlessEqual(response.status_code, 200)
 
 class DocApi(TestCase):
-    def test_create_investigator(self):
+    def test_docinfo(self):
         user = 'anm'
         password="sudheer"
         response = self.client.get("/docinfo/", data={'doc_name': user,'pwd': password})
@@ -200,7 +199,7 @@ class AncDueTestCase(TestCase):
         self.assertEqual(len(anc.womenname),6)
   
 class SendSmsApi(TestCase):
-    def test_create_investigator(self):
+    def test_sendsms(self):
         phone_number = "9494022013"
         msg = "Poc is given to the patient"
         response = self.client.get("/sendsms/", data={'phone_number': phone_number,'msg': msg })        
@@ -209,13 +208,8 @@ class SendSmsApi(TestCase):
 class CountyApi(TestCase):
     def setUp(self):
         self.country=CountryTb.objects.create(country_name="India",country_code="91")
-    def test_create_investigator(self):
+    def test_county(self):
         response = self.client.get("/county/", data={'country_name':self.country})
-        self.failUnlessEqual(response.status_code, 200)
-
-class PocUpdateApi(TestCase):
-    def test_create_investigator(self):
-        response = self.client.get("/sendsms/")
         self.failUnlessEqual(response.status_code, 200)
 
 class DisttabApi(TestCase):
@@ -223,7 +217,7 @@ class DisttabApi(TestCase):
         self.country=CountryTb.objects.create(country_name="India")
         self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
-    def test_create_investigator(self):
+    def test_district(self):
         response = self.client.get("/district/", data={'country_name':self.country,'county_name':self.county,'district_name':self.district})
         self.failUnlessEqual(response.status_code, 200)
 
@@ -234,7 +228,7 @@ class SubdistrictTabApi(TestCase):
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
         #self.hospitals_name = HealthCenters.objects.filter(county_name=county_obj,hospital_type='County',active=True).values_list('hospital_name')
-    def test_create_investigator(self):
+    def test_subdistrict(self):
         response = self.client.get("/subdistrict/", data={'country_name':self.country,'county_name':self.county,'district_name':self.district,'subdistrict_name':self.subdistrict})
         self.failUnlessEqual(response.status_code, 200)
 
@@ -245,24 +239,158 @@ class LocationApi(TestCase):
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
         self.location = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
-    def test_create_investigator(self):
+    def test_location(self):
         response = self.client.get("/location/", data={'country_name':self.country,'county_name':self.county,'district_name':self.district,'subdistrict_name':self.subdistrict,'location_name':self.location})
         self.failUnlessEqual(response.status_code, 200)
-        self.assertEquals(CountryTb.objects.count(),1)
 
 class LocationsApi(TestCase):
-    def test_create_investigator(self):
+    def test_location(self):
         response = self.client.get("/location/")
         self.failUnlessEqual(response.status_code, 200)
 
 class LoginTestCase(TestCase):
-
     def test_login(self):
         response = self.client.get('/admin/')
         self.assertRedirects(response, '/admin/login/?next=/admin/')
 
-class LoginApi(TestCase):
-    def test_create_investigator(self):
-        response = self.client.get("/admin/login/?next=/admin/")
+class SaveUserMaintenanceAPI(TestCase):
+    def test_login(self):
+        userrole="ANM"
+        userid="test123"
+        first_name="test"
+        last_name="unit"
+        password="123456"
+        mobile="123456789"
+        email="a@b.com"
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+        self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+        hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="subcenter",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,villages="dsfjkjk",parent_hospital="parent",active=True)
+        active=True
+        response = self.client.get("/saveusermaintenance/",
+                                   data={'country_name':self.country,'county_name':self.county,'district_name':self.district,
+                                         'subdistrict_name':self.subdistrict,'village':self.village,'userrole':userrole,'userid':userid,
+                                         'first_name':first_name,'last_name':last_name,'password':password,'mobile':mobile,'email':email,
+                                         'subcenter_name':hospital_name,"hospitals":hospital_name,'active':active
+
+        })
         self.failUnlessEqual(response.status_code, 200)
 
+class SaveHealthCentersAPI(TestCase):
+    def test_login(self):
+        hospital_name="ou"
+        hostype="subcenter"
+        address="test"
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+        self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+        parent_hos="test"
+        active=True
+        response = self.client.get("/savehospital/",
+                                   data={'hos_country':self.country,'hos_county':self.county,'hos_district':self.district,
+                                         'hos_subdistrict':self.subdistrict,'villages':self.village,'name':hospital_name,'active':active,
+                                         'type':hostype,'add':address,'parent_hos':parent_hos
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+
+class HospitalValidateApi(TestCase):
+
+    def test_hospital_validate(self):
+        response = self.client.get("/hospitalvalidate/", data={'hname':'testhospital','id':123456})
+        self.failUnlessEqual(response.status_code, 200)
+
+class LocationValidateApi(TestCase):
+    def setUp(self):
+        self.country = CountryTb.objects.create(country_name="india")
+
+    def test_location_validate(self):
+        response = self.client.get("/locationvalidate/", data={'lname':'testhospital','id':123456,'country_name':self.country})
+        self.failUnlessEqual(response.status_code, 200)
+
+class SaveDistrictApi(TestCase):
+    def test_save_district(self):
+        self.country=CountryTb.objects.create(country_name="Sample")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="SampleCounty")
+        # self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="SampleDistrict")
+        response = self.client.get("/savedistrict/", data={'country':self.country,'county':self.county,'district':'SampleDistrict','active':True})
+        self.failUnlessEqual(response.status_code, 200)
+
+class SaveSubDistrictApi(TestCase):
+    def test_save_district(self):
+        self.country=CountryTb.objects.create(country_name="Sample")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="SampleCounty")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="SampleDistrict")
+        response = self.client.get("/savesubdistrict/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':"SampleSub",'active':True})
+        self.failUnlessEqual(response.status_code, 200)
+
+class SaveLocationApi(TestCase):
+    def test_save_district(self):
+        self.country=CountryTb.objects.create(country_name="Sample")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="SampleCounty")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="SampleDistrict123")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhfasdas")
+        response = self.client.get("/savelocation/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':self.subdistrict,'location':"TestLocation",'active':True})
+        self.failUnlessEqual(response.status_code, 200)
+
+class SubdistrictValidateApi(TestCase):
+    def setUp(self):
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+    def test_subdistirct_validate(self):
+        response = self.client.get("/subdistrictvalidate/", data={'sname':'sacho','id':123456,'subdistrict':self.subdistrict})
+        self.failUnlessEqual(response.status_code, 200)
+
+class DistrictValidate(TestCase):
+    def setUp(self):
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+    def test_district_validate(self):
+        response = self.client.get("/districtvalidate/", data={'dname':'dulla','id':123456,'district_name':self.district})
+
+class UserValidateApi(TestCase):
+
+    def test_user_validate(self):
+        response = self.client.get("/uservalidate/", data={'uname':'sudheer','id':123456})
+        self.failUnlessEqual(response.status_code, 200)
+
+class SavePasswordApi(TestCase):
+
+    def test_save_password(self):
+        response = self.client.get("/savepassword/", data={'password':'14525968','id':123456})
+        self.failUnlessEqual(response.status_code, 200)
+
+class SubcenterApi(TestCase):
+    def setUp(self):
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+        self.location = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+    def test_subcenter(self):
+        response = self.client.get("/subcenter/", data={'location':self.location})
+        self.failUnlessEqual(response.status_code, 200)
+
+class ParentHospitalApi(TestCase):
+    def test_parenthos_detail(self):
+        hos_type = 'Subcenter'
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+        #self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+        #hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="subcenter",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,villages="dsfjkjk",parent_hospital="parent",active=True)
+        response = self.client.get("/parenthospital/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':self.subdistrict,'hos_type':hos_type})
+        self.failUnlessEqual(response.status_code, 200)
+
+class ResetpasswordApi(TestCase):
+    def test_reser_password(self):
+        response = self.client.get("/resetpassword/", data={'resetpassword':'123456'})
+        self.failUnlessEqual(response.status_code, 200)
