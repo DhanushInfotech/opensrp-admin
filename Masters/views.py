@@ -49,20 +49,13 @@ def poc_update(request):
         pending =request.GET.get("pending","")
         patientph =str(request.GET.get("patientph",""))
         patientname =str(request.GET.get("patientname",""))
-    elif request.method =="POST":
-        document_id=request.POST.get("docid","")
-        poc_info=request.POST.get("pocinfo","")
-        visitid=request.POST.get("visitid","")
-        entityid=request.POST.get("entityid","")
-        docid=request.POST.get("doctorid","")
-        pending =request.POST.get("pending","")
-        patientph =request.GET.get("patientph","")
     poc_details = json.loads(poc_info)
     poc = []
     poc_data = {}
     server_version = int(round(time.time() * 1000))
     poc_data['pending']=pending
     poc_data['poc'] = str(poc_info)
+
     poc_data['server_version'] = server_version
     poc_backup_data = json.dumps(poc_data)
     #Getting old poc and will update that with present value at the end
@@ -71,11 +64,9 @@ def poc_update(request):
         for visit in visit_backup:
             old_poc= json.loads(visit[0])
             poc.append(old_poc)
-        #del_poc_bckup=PocBackup.objects.filter(id = int(visit_backup[0][1])).delete()
     poc_backup = PocBackup(visitentityid=str(visitid),entityidec=str(entityid),docid=str(docid),poc=poc_backup_data)
     poc_backup.save()
     #Reading all values from document
-    #pront
     result = {}
     entity_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_id/?key=%22"+str(document_id)+"%22"
     poc_output=commands.getoutput(entity_detail)
@@ -111,11 +102,12 @@ def poc_update(request):
     if len(pending)>0:
         update_poc=PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(pending=str(pending),docid=str(docid))
     #Updating backup table with latest poc/pending status info
-    visit_info = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).values_list('visitentityid','entityidec')
+    visit_info = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).values_list('visitentityid','entityidec','wifename')
     if len(pending)==0:
         anm_details = UserMasters.objects.filter(user_id=str(anmId)).values_list('phone_number','country__country_name')
         anm_country = str(anm_details[0][1])
         anm_phone = str(anm_details[0][0])
+        patientname=visit_info[0][2]
         patient_sms = "Dear %s your prescription " %patientname
         if len(poc_details["investigations"]) > 0:
             patient_sms+=" Investigations: "
@@ -129,7 +121,7 @@ def poc_update(request):
             patient_sms+=" diagnosis: "
             for diagnosis in poc_details["diagnosis"]:
                 patient_sms = patient_sms+diagnosis
-        anm_sms = "POC is given for %s on" %patientname
+        anm_sms = "POC is given for %s on " %patientname
         anm_sms+=datetime.now().strftime('%d-%b-%Y %H:%M:%S')
         country_code= str(CountryTb.objects.filter(country_name=str(anm_country)).values_list('country_code')[0][0])
         anm_phone = country_code+anm_phone[-int(settings.PHONE_NUMBER_LENGTH):]
@@ -152,11 +144,7 @@ def docinfo(request):
     if request.method == "GET":
         doc_name= request.GET.get('docname',"")
         password = request.GET.get('pwd',"")
-    elif request.method == "POST":
-        doc_name= request.GET.get('docname',"")
-        password = request.GET.get('pwd',"")
     end_res = '{}'
-
     doc_loc = UserMasters.objects.filter(user_id=str(doc_name),user_role="DOC").values_list('hospital__hospital_name')
     if len(doc_loc)>0:
     	doc_loc = str(doc_loc[0][0]).replace(" (PHC)","")
@@ -182,7 +170,6 @@ def docinfo(request):
         visit={}
         newvisitdata=defaultdict(list)
         newvisit={}
-
         field_data = row[-1]['value'][1]['form']['fields']
         for f in range((len(field_data)-1),-1,-1):
             fd = field_data[f]
@@ -198,7 +185,7 @@ def docinfo(request):
                 for visitdata in row:
                     pnc_tags = ["pncNumber","pncVisitDate","difficulties1","difficulties2","abdominalProblems","urineStoolProblems",
                                 "hasFeverSymptoms","breastProblems","vaginalProblems","bpSystolic","bpDiastolic","temperature","pulseRate",
-                                "bloodGlucoseData","weight","anmPoc","pncVisitPlace","pncVisitDate","isHighRisk","hbLevel"]
+                                "bloodGlucoseData","weight","anmPoc","pncVisitPlace","pncVisitDate","isHighRisk","hbLevel","pstechoscopeData"]
                     f = lambda x: x[0].get("value") if len(x)>0 else ""
                     fetched_dict = copyf(visitdata["value"][1]["form"]["fields"],"name",pnc_tags)
                     visit["pncNumber"]=f(copyf(fetched_dict,"name","pncNumber"))
@@ -217,6 +204,7 @@ def docinfo(request):
                     visit["bloodGlucoseData"]=f(copyf(fetched_dict,"name","bloodGlucoseData"))
                     visit["weight"]=f(copyf(fetched_dict,"name","weight"))
                     visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
+                    visit["pstechoscopeData"]=f(copyf(fetched_dict,"name","pstechoscopeData"))
                     visit["pncVisitPlace"]=f(copyf(fetched_dict,"name","pncVisitPlace"))
                     visit["pncVisitDate"]=f(copyf(fetched_dict,"name","pncVisitDate"))
                     visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
@@ -230,7 +218,7 @@ def docinfo(request):
                 doc_id=row[-1]['id']
                 for visitdata in row:
                     anc_tags = ["ancVisitNumber","ancNumber","ancVisitPerson","ancVisitDate","riskObservedDuringANC","bpSystolic","bpDiastolic",
-                                "temperature","pulseRate","bloodGlucoseData","weight","anmPoc","isHighRisk","fetalData"]
+                                "temperature","pulseRate","bloodGlucoseData","weight","anmPoc","isHighRisk","fetalData","pstechoscopeData"]
                     f = lambda x: x[0].get("value") if len(x)>0 else ""
                     fetched_dict = copyf(visitdata["value"][1]["form"]["fields"],"name",anc_tags)
                     visit["ancVisitNumber"]=f(copyf(fetched_dict,"name","ancVisitNumber"))
@@ -250,6 +238,7 @@ def docinfo(request):
                     visit["weight"]=f(copyf(fetched_dict,"name","weight"))
                     visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
                     visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
+                    visit["pstechoscopeData"]=f(copyf(fetched_dict,"name","pstechoscopeData"))
                     visit["fetalData"]=f(copyf(fetched_dict,"name","fetalData"))
                     visit['visit_type'] = 'ANC'
                     visit["entityid"] = entity[0]
@@ -314,26 +303,26 @@ def docinfo(request):
                                     visit['edd']=edd
                                     visit['lmp']=lmp
                                     visit_data.append(visit)
-                        elif row1[i]['value'][0] == "child_registration_oa":
-                            key = data.get('name')
-                            if 'value' in child_data.keys():
-                                value = child_data.get('value')
-                            else:
-                                value=''
-                            if key == 'gender':
-                                visit['gender']=value
-                            elif key == 'name':
-                                visit['name']=value
-                            elif key == 'registrationDate':
-                                visit['registrationDate']=value
-                            elif key == 'motherName':
-                                temp={}
-                                temp={"wifeName":value}
-                                result.update(temp)
-                            elif key == 'fatherName':
-                                temp={}
-                                temp={"husbandName":value}
-                                result.update(temp)
+                        # elif row1[i]['value'][0] == "child_registration_oa":
+                        #     key = data.get('name')
+                        #     if 'value' in child_data.keys():
+                        #         value = child_data.get('value')
+                        #     else:
+                        #         value=''
+                        #     if key == 'gender':
+                        #         visit['gender']=value
+                        #     elif key == 'name':
+                        #         visit['name']=value
+                        #     elif key == 'registrationDate':
+                        #         visit['registrationDate']=value
+                        #     elif key == 'motherName':
+                        #         temp={}
+                        #         temp={"wifeName":value}
+                        #         result.update(temp)
+                        #     elif key == 'fatherName':
+                        #         temp={}
+                        #         temp={"husbandName":value}
+                        #         result.update(temp)
                         elif row1[i]['value'][0] == "anc_close" or row1[i]['value'][0] == "pnc_close":
                             continue
 
@@ -440,13 +429,10 @@ def auth(request):
     if request.method == 'GET':
         username = str(request.GET.get('userid',''))
         password = str(request.GET.get('pwd',''))
-    else:
-        username = str(request.POST.get('userid',''))
-        password = str(request.POST.get('pwd',''))
     pwd = hashlib.sha1()
     pwd.update(password)
     password = pwd.hexdigest()
-    user_details=UserMasters.objects.filter(user_id=str(username),password=password).values_list('user_role','id','name','country',)
+    user_details=UserMasters.objects.filter(user_id=str(username),password=password).values_list('user_role','id','name','country')
     if len(user_details) ==0:
         return HttpResponse('{"status":"Invalid username/password"}')
     user_role=user_details[0][0]
@@ -493,14 +479,10 @@ def auth(request):
     end_res= json.dumps(user_data)
     return HttpResponse(end_res)
 
-
-
 def vitalsdata(request):
     vital_readings=[]
     if request.method == 'GET':
         visitid = request.GET.get('visit','')
-    else:
-        visitid = request.POST.get('visit','')
     ancvisit_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(visitid)+"%22&descending=True"
     visit_output = commands.getoutput(ancvisit_detail)
     visit_data = json.loads(visit_output)
@@ -542,8 +524,6 @@ def doctor_refer(request):
         entityid = request.GET.get("entityid","")
         patientname = str(request.GET.get("patientname",""))
     doc_details = UserMasters.objects.filter(user_id=str(doc_id)).values_list("hospital__hospital_name")
-    if len(doc_details)==0:
-    	return HttpResponse('{"status":"Invalid username/password"}')
     doc_hospital = str(doc_details[0][0]).replace(" (PHC)","")
     hospital_details = HealthCenters.objects.filter(hospital_name=doc_hospital).values_list("hospital_type")
     if str(hospital_details[0][0])=="PHC":
@@ -551,7 +531,6 @@ def doctor_refer(request):
         location = str(HealthCenters.objects.filter(hospital_name=str(doc_hospital),hospital_type='PHC').values_list("parent_hospital")[0][0])
         doctor_details = UserMasters.objects.filter(hospital__hospital_name=str(location)).values_list("name","phone_number","country__country_name")
         for doctor in doctor_details:
-            print doctor[2]
             country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
             doctor_phone=country_code+str(doctor[1])[-int(settings.PHONE_NUMBER_LENGTH):]
             msg = "Dear Doctor, %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
@@ -605,33 +584,9 @@ def admin_hospital(request):
     country_name=[]
     for n in countryname:
         country_name.append(n[0])
-
     c = {}
     c.update(csrf(request))
     return render_to_response('addhospital1.html',{'x':country_name,'csrf_token':c['csrf_token']})
-
-def get_hospital(request):
-    if request.method == "GET":
-        type_name= request.GET.get('devata',"")
-
-    elif request.method == "POST":
-        type_name= request.GET.get('devata',"")
-
-    if str(type_name) == 'district':
-        address = DimLocation.objects.all().values_list('district').distinct()
-    elif str(type_name) == 'taluka':
-        address = DimLocation.objects.all().values_list('taluka').distinct()
-    elif str(type_name) == 'phc':
-        address = DimLocation.objects.all().values_list('phc__name').distinct()
-    elif str(type_name) == 'subcenter':
-        address = DimLocation.objects.all().values_list('subcenter').distinct()
-
-    res = []
-    for a in address:
-        res.append(str(a[0]))
-    result = {'res':res}
-    res = json.dumps(result)
-    return HttpResponse(res)
 
 def save_hospital(request):
     if request.method == 'GET':
@@ -642,22 +597,9 @@ def save_hospital(request):
         county = request.GET.get('hos_county','')
         district =request.GET.get('hos_district','')
         subdistrict =request.GET.get('hos_subdistrict','')
-        # location =request.GET.get('hos_location','')
         villages = request.GET.get('hos_village','')
         parenthos = request.GET.get('parent_hos','')
         active=request.GET.get('active','')
-    elif request.method == 'POST':
-        hos_name = request.POST.get('name','')
-        hostype = request.POST.get('type','')
-        address = request.POST.get('add','')
-        country = request.POST.get('hos_country','')
-        county = request.POST.get('hos_county','')
-        district =request.POST.get('hos_district','')
-        subdistrict =request.POST.get('hos_subdistrict','')
-        # location =request.POST.get('hos_location','')
-        villages = request.POST.get('hos_village','')
-        parenthos = request.POST.get('parent_hos','')
-        active=request.POST.get('active','')
     status = 0
     if str(active) == 'true':
         status = 1
@@ -668,7 +610,6 @@ def save_hospital(request):
     district_obj=''
     subdistrict_obj=''
     if len(county)==0:
-        # county_obj = CountyTb.objects.get(county_name=str(county))
         hospital_details = HealthCenters(hospital_name=str(hos_name),hospital_type=str(hostype),hospital_address=str(address),country_name=country_obj,active=status)
         hospital_details.save()
         x = {"result":'/admin/'}
@@ -681,9 +622,7 @@ def save_hospital(request):
         x = {"result":'/admin/'}
         x=json.dumps(x)
         return HttpResponse(x)
-        # district_obj = Disttab.objects.get(district_name=str(district))
     if len(str(subdistrict)) ==0:
-        # subdistrict_obj = SubdistrictTab.objects.get(subdistrict=str(subdistrict))
         county_obj = CountyTb.objects.get(county_name=str(county))
         district_obj = Disttab.objects.get(district_name=str(district))
         hospital_details = HealthCenters(hospital_name=str(hos_name),hospital_type=str(hostype),hospital_address=str(address),country_name=country_obj,county_name=county_obj,district_name=district_obj,parent_hospital=str(parenthos),active=status)
@@ -702,7 +641,6 @@ def save_hospital(request):
     return HttpResponse(x)
 
 def update_hospitaldetail(request):
-
     global hosp_id
     if request.method == 'GET':
         hos_name = request.GET.get('name','')
@@ -715,18 +653,8 @@ def update_hospitaldetail(request):
         villages = request.GET.get('hos_village','')
         parenthos = request.GET.get('parent_hos','')
         active=request.GET.get('active','')
-
-    elif request.method == 'POST':
-        hos_name = request.POST.get('name','')
-        hostype = request.POST.get('type','')
-        address = request.POST.get('add','')
-        country = request.POST.get('hos_country','')
-        county = request.POST.get('hos_county','')
-        district =request.POST.get('hos_district','')
-        subdistrict =request.POST.get('hos_subdistrict','')
-        villages = request.POST.get('hos_village','')
-        parenthos = request.POST.get('parent_hos','')
-        active=request.POST.get('active','')
+    if 'hosp_id' not in globals():
+        hosp_id=1
     status = 0
     if str(active) == 'true':
         status = 1
@@ -750,12 +678,10 @@ def update_hospitaldetail(request):
         x = {"result":'/admin/'}
         x=json.dumps(x)
         return HttpResponse(x)
-
     county_obj = CountyTb.objects.get(county_name=str(county))
     district_obj = Disttab.objects.get(district_name=str(district))
     subdistrict_obj = SubdistrictTab.objects.get(subdistrict=str(subdistrict))
     edit_hospital = HealthCenters.objects.filter(id=hosp_id).update(hospital_name=str(hos_name),hospital_type=str(hostype),hospital_address=str(address),country_name=country_obj,county_name=county_obj,district_name=district_obj,subdistrict_name=subdistrict_obj,parent_hospital=str(parenthos),villages=str(villages),active=status)
-
     x = {"result":1}
     x=json.dumps(x)
     return HttpResponse(x)
@@ -794,8 +720,6 @@ def edit_hospital(request,hospital_id):
     global hosp_id
     hosp_id = hospital_id
     if request.method == 'GET':
-        edit_details = HealthCenters.objects.get(id=int(hospital_id))
-    elif request.method == 'POST':
         edit_details = HealthCenters.objects.get(id=int(hospital_id))
 
     hospital_types=['Country','County','District','SubDistrict','PHC','Subcenter']
@@ -872,7 +796,6 @@ def edit_hospital(request,hospital_id):
 
 def adminadd_usermaintenance(request):
     countryname = CountryTb.objects.filter(active=True).values_list('country_name')
-
     country_name=[]
     for n in countryname:
         country_name.append(n[0])
@@ -888,7 +811,6 @@ def parenthos_detail(request):
         p_county_name = str(request.GET.get('county',''))
         p_district_name = str(request.GET.get('district',''))
         p_subdistrict_name = str(request.GET.get('subdistrict',''))
-        # p_location = str(request.GET.get('location',''))
         p_hostype = str(request.GET.get('hos_type',''))
     country_obj = CountryTb.objects.get(country_name=str(p_country_name))
     if p_hostype == 'County':
@@ -942,24 +864,6 @@ def save_usermaintenance(request):
         village = request.GET.get('village','')
         hospital_name = request.GET.get('hospitals','')
         active = str(request.GET.get('active',''))
-
-    elif request.method == 'POST':
-        userrole = request.POST.get('userrole','')
-        userid = request.POST.get('userid','')
-        first_name = request.POST.get('first_name','')
-        last_name = request.POST.get('last_name','')
-        password = request.POST.get('password','')
-        mobile = request.POST.get('mobile','')
-        email = request.POST.get('email','')
-        village = request.POST.get('village','')
-        countryname=request.POST.get('country_name','')
-        countyname=request.POST.get('county_name','')
-        districtname=request.POST.get('district_name','')
-        subdistrictname=request.POST.get('subdistrict_name','')
-        subcentername=request.POST.get('subcenter_name')
-        hospital_name = request.POST.get('hospitals','')
-        active = str(request.POST.get('active',''))
-
     pwd = hashlib.sha1()
     pwd.update(password)
     password = pwd.hexdigest()
@@ -978,7 +882,6 @@ def save_usermaintenance(request):
 
     elif str(userrole) == 'DOC':
         if len(countyname)==0:
-
             hospital_name=HealthCenters.objects.get(hospital_name=str(hospital_name))
             village_details = UserMasters(user_role=str(userrole),user_id=str(userid),name=str(first_name),lastname=str(last_name),password=str(password),hospital=hospital_name,phone_number=str(mobile),email=str(email),country=country_obj,active=status)
             village_details.save()
@@ -1002,7 +905,6 @@ def save_usermaintenance(request):
             x = {"result":1}
             x=json.dumps(x)
             return HttpResponse(x)
-
         county_obj = CountyTb.objects.get(county_name=str(countyname))
         district_obj = Disttab.objects.get(district_name=str(districtname))
         subdistrict_obj = SubdistrictTab.objects.get(subdistrict=str(subdistrictname))
@@ -1013,15 +915,6 @@ def save_usermaintenance(request):
     x = {"result":1}
     x=json.dumps(x)
     return HttpResponse(x)
-
-# def subcenter_list(currentvalue,all_subcenters):
-#     subcenter= []
-#
-#     subcenter.insert(0,currentvalue)
-#     for s in all_subcenters:
-#         if s[0] not in subcenter:
-#             subcenter.append(s[0])
-#     return subcenter
 
 def edit_usermaintenance(request,batch_id):
     global user_id
@@ -1164,25 +1057,9 @@ def update_usermaintenance(request):
         village = request.GET.get('village','')
         hospital_name = request.GET.get('hospitals','')
         active = str(request.GET.get('active',''))
-
-
-    elif request.method == 'POST':
-        userrole = request.POST.get('userrole','')
-        userid = request.POST.get('userid','')
-        first_name = request.POST.get('first_name','')
-        last_name = request.POST.get('last_name','')
-        password = request.POST.get('password','')
-        mobile = request.POST.get('mobile','')
-        email = request.POST.get('email','')
-        village = request.POST.get('village','')
-        countryname=request.POST.get('country_name','')
-        countyname=request.POST.get('county_name','')
-        districtname=request.POST.get('district_name','')
-        subdistrictname=request.POST.get('subdistrict_name','')
-        subcentername=request.POST.get('subcenter_name','')
-        hospital_name = request.POST.get('hospitals','')
-        active = str(request.POST.get('active',''))
     status=0
+    if 'user_id' not in globals():
+        user_id=1
     if str(active) =='true':
         status=1
     country_obj = CountryTb.objects.get(country_name=str(countryname))
@@ -1192,13 +1069,10 @@ def update_usermaintenance(request):
         subdistrict_obj = SubdistrictTab.objects.get(subdistrict=str(subdistrictname))
         subcenter = HealthCenters.objects.get(hospital_name=str(subcentername))
         edit_details = UserMasters.objects.filter(id=user_id).update(user_role=str(userrole),user_id=str(userid),name=str(first_name),lastname=str(last_name),password=str(password),subcenter=subcenter,phone_number=str(mobile),email=str(email),country=country_obj,county=county_obj,district=district_obj,subdistrict=subdistrict_obj,villages=str(village),active=status)
-
     elif str(userrole) == 'DOC':
         if len(countyname)==0:
-
             hospital_name=HealthCenters.objects.get(hospital_name=str(hospital_name))
             edit_details = UserMasters.objects.filter(id=user_id).update(user_role=str(userrole),user_id=str(userid),name=str(first_name),lastname=str(last_name),password=str(password),hospital=hospital_name,phone_number=str(mobile),email=str(email),country=country_obj,active=status)
-
             x = {"result":1}
             x=json.dumps(x)
             return HttpResponse(x)
@@ -1206,7 +1080,6 @@ def update_usermaintenance(request):
             county_obj = CountyTb.objects.get(county_name=str(countyname))
             hospital_name=HealthCenters.objects.get(hospital_name=str(hospital_name))
             edit_details = UserMasters.objects.filter(id=user_id).update(user_role=str(userrole),user_id=str(userid),name=str(first_name),lastname=str(last_name),password=str(password),hospital=hospital_name,phone_number=str(mobile),email=str(email),country=country_obj,county=county_obj,active=status)
-
             x = {"result":1}
             x=json.dumps(x)
             return HttpResponse(x)
@@ -1218,12 +1091,10 @@ def update_usermaintenance(request):
             x = {"result":1}
             x=json.dumps(x)
             return HttpResponse(x)
-
         county_obj = CountyTb.objects.get(county_name=str(countyname))
         district_obj = Disttab.objects.get(district_name=str(districtname))
         subdistrict_obj = SubdistrictTab.objects.get(subdistrict=str(subdistrictname))
         hospital_name=HealthCenters.objects.get(hospital_name=str(hospital_name))
-        
         edit_details = UserMasters.objects.filter(id=user_id).update(user_role=str(userrole),user_id=str(userid),name=str(first_name),lastname=str(last_name),password=str(password),hospital=hospital_name,phone_number=str(mobile),email=str(email),country=country_obj,county=county_obj,district=district_obj,subdistrict=subdistrict_obj,villages=str(village),active=status)
     x = {"result":1}
     x=json.dumps(x)
@@ -1232,10 +1103,6 @@ def update_usermaintenance(request):
 def county(request):
     if request.method == "GET":
         country_name= request.GET.get('country_name',"")
-
-    elif request.method == "POST":
-        country_name= request.POST.get('country_name',"")
-
     country_obj = CountryTb.objects.get(country_name=str(country_name))
     county_data = CountyTb.objects.filter(country_name=country_obj,active=True).values_list('county_name')
     hospitals_name = HealthCenters.objects.filter(country_name=country_obj,hospital_type='Country',active=True).values_list('hospital_name')
@@ -1252,7 +1119,6 @@ def county(request):
 
 def adminadd_district(request):
     countryname = CountryTb.objects.filter(active=True).values_list('country_name')
-
     country_name=[]
     for n in countryname:
         country_name.append(n[0])
@@ -1281,12 +1147,8 @@ def save_district(request):
 def edit_district(request,district_id):
     global hos_id
     hos_id = district_id
-
     if request.method == 'GET':
         edit_details = Disttab.objects.get(id=int(district_id))
-    elif request.method == 'POST':
-        edit_details = Disttab.objects.get(id=int(district_id))
-
     country = []
     country_name = CountryTb.objects.filter(active=True).values_list('country_name')
     e_country_name = CountryTb.objects.filter(id=int(edit_details.country_name.id)).values_list("country_name")[0][0]
@@ -1320,6 +1182,8 @@ def update_district(request):
         district = str(request.GET.get('district',''))
         active = request.GET.get('active','')
     status=0
+    if 'hos_id' not in globals():
+        hos_id=1
     if str(active) == 'true':
         status = 1
     country_obj = CountryTb.objects.get(country_name=str(country))
@@ -1341,12 +1205,8 @@ def district_validate(request):
 
 
 def district(request):
-
     if request.method == "GET":
         county_name= request.GET.get('county_name',"")
-
-    elif request.method == "POST":
-        county_name= request.POST.get('county_name',"")
     county_obj=CountyTb.objects.filter(county_name=str(county_name)).values_list("id")[0][0]
     district_data = Disttab.objects.filter(county_name=county_obj,active=True).values_list('district_name')
     hospitals_name = HealthCenters.objects.filter(county_name=county_obj,hospital_type='County',active=True).values_list('hospital_name')
@@ -1354,7 +1214,6 @@ def district(request):
     if len(hospitals_name)>0:
         for h in hospitals_name:
             hos_names.append(h[0])
-
     res = []
     for d in district_data:
         res.append(str(d[0]))
@@ -1364,7 +1223,6 @@ def district(request):
 
 def adminadd_subdistrict(request):
     countryname = CountryTb.objects.filter(active=True).values_list('country_name')
-
     country_name=[]
     for n in countryname:
         country_name.append(n[0])
@@ -1380,12 +1238,6 @@ def save_subdist(request):
         district_name = request.GET.get("district","")
         subdistrict_name = request.GET.get("subdistrict","")
         active = request.GET.get("active","")
-    elif request.method=="POST":
-        country_name = request.POST.get("country","")
-        county_name = request.POST.get("county","")
-        district_name = request.POST.get("district","")
-        subdistrict_name = request.POST.get("subdistrict","")
-        active = request.POST.get("active","")
     status=0
     if str(active) =='true':
         status=1
@@ -1399,12 +1251,8 @@ def save_subdist(request):
     return HttpResponse(x)
 
 def subdistrict(request):
-    
     if request.method == "GET":
         district_name= request.GET.get('district_name',"")
-
-    elif request.method == "POST":
-        district_name= request.POST.get('district_name',"")
     district_obj=Disttab.objects.filter(district_name=str(district_name)).values_list("id")[0][0]
     subdistrict_data = SubdistrictTab.objects.filter(district=district_obj,active=True).values_list('subdistrict')
     hospitals_name = HealthCenters.objects.filter(district_name=district_obj,hospital_type='District',active=True).values_list('hospital_name')
@@ -1434,9 +1282,6 @@ def edit_subdistrict(request,subdistrict_id):
     hos_id = subdistrict_id
     if request.method == 'GET':
         edit_details = SubdistrictTab.objects.get(id=int(subdistrict_id))
-    elif request.method == 'POST':
-        edit_details = SubdistrictTab.objects.get(id=int(subdistrict_id))
-
     country = []
     country_name = CountryTb.objects.filter(active=True).values_list('country_name')
     e_country_name = CountryTb.objects.filter(id=int(edit_details.country.id)).values_list("country_name")[0][0]
@@ -1477,6 +1322,8 @@ def update_subdistrict(request):
         subdistrict = str(request.GET.get('subdistrict',''))
         active = str(request.GET.get('active',''))
     status=0
+    if 'hos_id' not in globals():
+        hos_id=1
     if str(active) =='true':
         status=1
     country_obj = CountryTb.objects.get(country_name=country)
@@ -1524,9 +1371,6 @@ def edit_location(request,loc_id):
     hos_id = loc_id
     if request.method == 'GET':
         edit_details = LocationTab.objects.get(id=int(loc_id))
-    elif request.method == 'POST':
-        edit_details = LocationTab.objects.get(id=int(loc_id))
-
     country = []
     country_name = CountryTb.objects.filter(active=True).values_list('country_name')
     e_country_name = CountryTb.objects.filter(id=int(edit_details.country.id)).values_list("country_name")[0][0]
@@ -1574,19 +1418,15 @@ def update_location(request):
         location = str(request.GET.get('location',''))
         active = str(request.GET.get('active',''))
     status=0
+    if 'hos_id' not in globals():
+        hos_id=1
     if str(active) =='true':
         status=1
-    previous_location = str(LocationTab.objects.filter(id=hos_id).values_list("location")[0][0])
     country_obj = CountryTb.objects.get(country_name=country)
     county_obj = CountyTb.objects.get(county_name =county)
     district_obj = Disttab.objects.get(district_name =district)
     subdistrict_obj = SubdistrictTab.objects.get(subdistrict=subdistrict)
     update_details = LocationTab.objects.filter(id=hos_id).update(country=country_obj,county=county_obj,district=district_obj,subdistrict=subdistrict_obj,location=str(location),active=status)
-    cur = connection.cursor()
-    health_centers_query = "update health_centers set villages=REPLACE(villages,'%s','%s')" %(previous_location,location)
-    cur.execute(str(health_centers_query))
-    user_masters_query = "update user_masters_new set villages=REPLACE(villages,'%s','%s')" %(previous_location,location)
-    cur.execute(str(user_masters_query))
     x = {"result":1}
     x=json.dumps(x)
     return HttpResponse(x)
@@ -1595,8 +1435,6 @@ def location(request):
     if request.method == "GET":
         subdistrict_name= request.GET.get('subdistrict_name',"")
 
-    elif request.method == "POST":
-        subdistrict_name= request.POST.get('subdistrict_name',"")
     subdistrict_obj=SubdistrictTab.objects.filter(subdistrict=str(subdistrict_name))
     subdistrict_data = HealthCenters.objects.filter(subdistrict_name=subdistrict_obj,hospital_type='SubDistrict',active=True).values_list('hospital_name')
     location_data = LocationTab.objects.filter(subdistrict=subdistrict_obj,active=True).values_list('location')
@@ -1637,12 +1475,7 @@ def location_validate(request):
 def subcenter(request):
     if request.method == "GET":
         location_name= request.GET.get('location',"")
-
-    elif request.method == "POST":
-        location_name= request.POST.get('location',"")
     subcenter_data = HealthCenters.objects.filter(hospital_name=str(location_name),hospital_type='Subcenter',active=True).values_list('villages')
-    if len(subcenter_data)==0:
-        return HttpResponse('{"status":"Invalid location"}')
     res=[]
     if len(subcenter_data[0][0]) != 'null':
         res = subcenter_data[0][0].split(',')
@@ -1656,7 +1489,6 @@ def docoverview(request):
         o_entityid =request.GET.get("entityid","")
     display_result=[]
     overview_data = []
-
     overview_visit_curl = ancvisit_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(o_visitid)+"%22&descending=true"
     overview_visit_output = commands.getoutput(overview_visit_curl)
     overview_visit_details = json.loads(overview_visit_output)
@@ -1670,7 +1502,6 @@ def docoverview(request):
             f = lambda x: x[0].get("value") if len(x)>0 else ""
 
             fetched_dict = copyf(event["value"][1]["form"]["fields"],"name",pnc_tags)
-
             overview_events["pncNumber"]=f(copyf(fetched_dict,"name","pncNumber"))
             overview_events["visitDate"]=f(copyf(fetched_dict,"name","pncVisitDate"))
             difficulty1=str(f(copyf(fetched_dict,"name","difficulties1")))

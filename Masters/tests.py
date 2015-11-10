@@ -1,7 +1,9 @@
 from django.test import TestCase
+from django.test import TestCase
 from Masters.models import *
 from django.test import Client
 from Masters.views import *
+import json
 
 class CountryTbTestCase(TestCase):
     def setUp(self):
@@ -118,6 +120,8 @@ class DrugInfoTestCase(TestCase):
         self.frequency=Frequency.objects.create(number_of_times="daily")
     def test_druginfo(self):
         drug=DrugInfo.objects.create(drug_name="corex",frequency=self.frequency,dosage=self.dosage,direction=self.direction,anc_conditions="pallor",pnc_conditions="Blurred Vision",child_illness="Cough")
+        drug = DrugInfo.objects.all()[0]
+        self.assertEquals(drug.direction,self.direction)
         self.assertEqual(drug.drug_name,'corex')
         self.assertEqual(drug.frequency.number_of_times,'daily')
         self.assertEqual(drug.dosage.dosage,'500mg')
@@ -127,15 +131,33 @@ class DrugInfoTestCase(TestCase):
         self.assertNotEqual(drug.child_illness,'Cough')
         self.assertEqual(len(drug.drug_name),5) 
 
-class DrugApi(TestCase):
+
+class DrugAPITestCase(TestCase):
+    def setUp(self):
+        self.direction=Directions.objects.create(directions="before breakfast")
+        self.dosage=Dosage.objects.create(dosage="500mg")
+        self.frequency=Frequency.objects.create(number_of_times="daily")
+        self.icd10=ICD10.objects.create(ICD10_Chapter="dhanush",ICD10_Code="1245",ICD10_Name="nurse")
     def test_druginfo(self):
+        drug=DrugInfo.objects.create(drug_name="corex",frequency=self.frequency,dosage=self.dosage,direction=self.direction,anc_conditions="pallor",pnc_conditions="Blurred Vision",child_illness="Cough")
+        icd10=ICD10.objects.create(ICD10_Chapter="dhanush",ICD10_Code="1245",ICD10_Name="nurse")
+        investigation = Investigations.objects.create(service_group_name="Radiology",investigation_name="minor dressing")
         response = self.client.get("/druginfo/")
         self.failUnlessEqual(response.status_code, 200)
+        drug = DrugInfo.objects.all()[0]
+        icd=ICD10.objects.all()[0]
+        self.assertEquals(drug.direction,self.direction)
+        self.assertEquals(icd10.ICD10_Name,"nurse")
+        self.assertEquals(investigation.service_group_name,"Radiology")
+
 
 class VitalApi(TestCase):
     def test_vitalsdata(self):
     	visit = "123hkjqhdbkjash"
-        response = self.client.get("/vitalsdata/",data={'visitid': visit})
+        visitNumber={'name':'ancVisitNumber','value':12}
+        ancVisit={'name':'ancVisitDate','value':'10/10/2016'}
+        response = self.client.get("/vitalsdata/",data={'visit': "0663b5b4-49a5-4e48-bece-f88094a44c52"})
+        response = self.client.get("/vitalsdata/",data={'visit': "5c1fc968-6e9d-49b0-905e-c22e13b88cb0"})
         self.failUnlessEqual(response.status_code, 200)
 
 class DocoverviewApi(TestCase):
@@ -148,16 +170,60 @@ class DocoverviewApi(TestCase):
 class DocReferApi(TestCase):
     def test_doctor_refer(self):
         doc_id="docid"
-        visitid = "visitid"
-        entityid = "entityid"
+        visitid = "0663b5b4-49a5-4e48-bece-f88094a44c52"
+        entityid = "f3d77a5a-8c51-4f44-817f-acf7c821118f"
         patientname = "patientname"
-        response = self.client.get("/doctor_refer/",data={'doc_id': doc_id,'visitid': visitid,'entityid': entityid,'patientname': patientname})
-        self.failUnlessEqual(response.status_code, 200)                
-
-class InvestigationsTestCase(TestCase):
-    def test_investigation(self):
-        investigation = Investigations.objects.create(service_group_name="Radiology",investigation_name="minor dressing")
-        self.assertEqual(investigation.service_group_name,'Radiology')
+        userrole="DOC"
+        userid="test123"
+        first_name="test"
+        last_name="unit"
+        password="123456"
+        mobile="123456789"
+        email="a@b.com"
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+        self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+        self.hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="subdistricthospital",active=True)
+        self.subdistrict_hospital_name=HealthCenters.objects.create(hospital_name="subdistricthospital",hospital_type="SubDistrict",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="districthospital",active=True)
+        self.district_hospital_name=HealthCenters.objects.create(hospital_name="districthospital",hospital_type="District",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,parent_hospital="countyhospital",active=True)
+        self.county_hospital_name=HealthCenters.objects.create(hospital_name="countyhospital",hospital_type="County",hospital_address="testaddress",country_name=self.country,county_name=self.county,parent_hospital="countryhospital",active=True)
+        self.country_hospital_name=HealthCenters.objects.create(hospital_name="countryhospital",hospital_type="Country",hospital_address="testaddress",country_name=self.country,parent_hospital="parent",active=True)
+        active=True
+        user=UserMasters.objects.create(user_role="DOC",user_id=userid,name=first_name,password=password,
+                                   phone_number=mobile,email=email,hospital=self.hospital_name,lastname=last_name,
+                                   county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
+        subdistrictuser=UserMasters.objects.create(user_role="DOC",user_id="subdistrictdoc",name=first_name,password=password,
+                                   phone_number=mobile,email=email,hospital=self.subdistrict_hospital_name,lastname=last_name,
+                                   county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
+        districtuser=UserMasters.objects.create(user_role="DOC",user_id="districtdoc",name=first_name,password=password,
+                           phone_number=mobile,email=email,hospital=self.district_hospital_name,lastname=last_name,
+                           county=self.county,country=self.country,district=self.district)
+        countyuser=UserMasters.objects.create(user_role="DOC",user_id="countydoc",name=first_name,password=password,
+                           phone_number=mobile,email=email,hospital=self.county_hospital_name,lastname=last_name,
+                           county=self.county,country=self.country)
+        countryuser=UserMasters.objects.create(user_role="DOC",user_id="countrydoc",name=first_name,password=password,
+                           phone_number=mobile,email=email,hospital=self.country_hospital_name,lastname=last_name,
+                           country=self.country)
+        poc_data = PocInfo.objects.create(visitentityid="0663b5b4-49a5-4e48-bece-f88094a44c52",entityidec="f3d77a5a-8c51-4f44-817f-acf7c821118f",phc="testhospital")
+        poc_data = PocInfo.objects.create(visitentityid="5c1fc968-6e9d-49b0-905e-c22e13b88cb0",entityidec="ddd5e997-10d2-4d2d-8606-9012c1db0061",phc="testhospital")
+        poc_data = PocInfo.objects.create(visitentityid="db22c1b0-2059-4c32-a1b5-2b9e5d121e42",entityidec="ddd5e997-10d2-4d2d-8606-9012c1db0061",phc="testhospital")
+        poc_data = PocInfo.objects.create(visitentityid="fc2beeea-2fab-4eb0-b92c-17a807b53926",entityidec="b99e9350-b7a4-4038-a4b2-11cea4b9a851",phc="testhospital")
+        response = self.client.get("/doctor_refer/",data={'docid': userid,'visitid': visitid,'entityid': entityid,'patientname': patientname})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/doctor_refer/",data={'docid': "subdistrictdoc",'visitid': visitid,'entityid': entityid,'patientname': patientname})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/doctor_refer/",data={'docid': "districtdoc",'visitid': visitid,'entityid': entityid,'patientname': patientname})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/doctor_refer/",data={'docid': "countydoc",'visitid': visitid,'entityid': entityid,'patientname': patientname})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/docoverview/",data={'visitid': visitid,'entityid': entityid})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/docoverview/",data={"visitid":"5c1fc968-6e9d-49b0-905e-c22e13b88cb0","entityid":"ddd5e997-10d2-4d2d-8606-9012c1db0061"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/docoverview/",data={"visitid":"db22c1b0-2059-4c32-a1b5-2b9e5d121e42","entityid":"ddd5e997-10d2-4d2d-8606-9012c1db0061"})
+        self.failUnlessEqual(response.status_code, 200)
 
 class FormFieldsTestCase(TestCase):
     def setUp(self):
@@ -173,24 +239,64 @@ class UserMastersTestCase(TestCase):
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="Prakasam")
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ongole")
         self.hospital = HealthCenters.objects.create(country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,hospital_name="yashoda",hospital_type="subcenter",hospital_address="begumpet",parent_hospital="appolo",villages="kukatpalli")
-        self.subcenter = hospital = HealthCenters.objects.create(country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,hospital_name="yashoda",hospital_type="subcenter",hospital_address="begumpet",parent_hospital="appolo",villages="kukatpalli")
+        self.subcenter = HealthCenters.objects.create(country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,hospital_name="yashoda",hospital_type="subcenter",hospital_address="begumpet",parent_hospital="appolo",villages="kukatpalli")
     def test_usermasters(self):
         users = UserMasters.objects.create(user_role="ANM",user_id="anm",name="sudheer",password="sudheer",confirm_password="sudheer",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",subcenter=self.subcenter,villages="YPL",lastname="sandi",hospital=self.hospital,county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
         self.assertEqual(users.user_role,'ANM')
-#Workfromhere
+
 class AuthApi(TestCase):
+    def setUp(self):
+        self.country=CountryTb.objects.create(country_name="Pakistan",country_code="92")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="andhra")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="Prakasam")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ongole")
+        self.hospital = HealthCenters.objects.create(country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,hospital_name="yashoda",hospital_type="Subcenter",hospital_address="begumpet",parent_hospital="appolo",villages="kukatpalli")
+        self.subcenter = HealthCenters.objects.create(country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,hospital_name="yashoda",hospital_type="Subcenter",hospital_address="begumpet",parent_hospital="appolo",villages="kukatpalli")
+        self.phc_hospital_name=HealthCenters.objects.create(hospital_name="authphc",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="subdistricthospital",active=True)
     def test_auth(self):
-        user = 'anm'
-        password="sudheer"
-        response = self.client.get("/auth/", data={'userid': user,'password': password})
+        configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",escalation_schedule="2")
+        form = FormFields.objects.create(form_name="anc_registration",country=self.country,field1="A",field2="B",field3="C",field4="D",field5="E")
+        form = FormFields.objects.create(form_name="pnc_registration",country=self.country,field1="A",field2="B",field3="C",field4="D",field5="E")
+        form = FormFields.objects.create(form_name="ec_registration",country=self.country,field1="A",field2="B",field3="C",field4="D",field5="E")
+        form = FormFields.objects.create(form_name="fp_registration",country=self.country,field1="A",field2="B",field3="C",field4="D",field5="E")
+        form = FormFields.objects.create(form_name="child_registration",country=self.country,field1="A",field2="B",field3="C",field4="D",field5="E")
+        users = UserMasters.objects.create(user_role="ANM",user_id="anm",name="anm",password="9305a83381280d88e2364062056f385314db03d1",confirm_password="9305a83381280d88e2364062056f385314db03d1",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",subcenter=self.subcenter,villages="YPL",lastname="sandi",hospital=self.hospital,county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
+        self.direction=Directions.objects.create(directions="before breakfast")
+        self.dosage=Dosage.objects.create(dosage="500mg")
+        self.frequency=Frequency.objects.create(number_of_times="daily")
+        drug=DrugInfo.objects.create(drug_name="corex",frequency=self.frequency,dosage=self.dosage,direction=self.direction,anc_conditions="pallor",pnc_conditions="Blurred Vision",child_illness="Cough")
+        response = self.client.get("/auth/", data={'userid': 'anm','pwd': 'sudheer'})
+        self.failUnlessEqual(response.status_code, 200)
+        doc_users = UserMasters.objects.create(user_role="DOC",user_id="doc",name="doc",password="9305a83381280d88e2364062056f385314db03d1",confirm_password="9305a83381280d88e2364062056f385314db03d1",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",lastname="sandi",hospital=self.phc_hospital_name,county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
+        response = self.client.get("/auth/", data={'userid': 'doc','pwd': 'sudheer'})
         self.failUnlessEqual(response.status_code, 200)
 
 class DocApi(TestCase):
     def test_docinfo(self):
-        user = 'anm'
-        password="sudheer"
-        response = self.client.get("/docinfo/", data={'doc_name': user,'pwd': password})
+        userrole="DOC"
+        userid="test123"
+        first_name="test"
+        last_name="unit"
+        password="123456"
+        mobile="123456789"
+        email="a@b.com"
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+        self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+        self.hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="parent",active=True)
+        active=True
+        user=UserMasters.objects.create(user_role="DOC",user_id=userid,name=first_name,password=password,
+                                   phone_number=mobile,email=email,hospital=self.hospital_name,lastname=last_name,
+                                   county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
+        poc_data = PocInfo.objects.create(visitentityid="0663b5b4-49a5-4e48-bece-f88094a44c52",entityidec="f3d77a5a-8c51-4f44-817f-acf7c821118f",phc="testhospital")
+        poc_data = PocInfo.objects.create(visitentityid="5c1fc968-6e9d-49b0-905e-c22e13b88cb0",entityidec="ddd5e997-10d2-4d2d-8606-9012c1db0061",phc="testhospital")
+        poc_data = PocInfo.objects.create(visitentityid="db22c1b0-2059-4c32-a1b5-2b9e5d121e42",entityidec="ddd5e997-10d2-4d2d-8606-9012c1db0061",phc="testhospital")
+        poc_data = PocInfo.objects.create(visitentityid="fc2beeea-2fab-4eb0-b92c-17a807b53926",entityidec="b99e9350-b7a4-4038-a4b2-11cea4b9a851",phc="testhospital")
+        response = self.client.get("/docinfo/", data={'docname': userid,'pwd': password})
         self.failUnlessEqual(response.status_code, 200)
+
 
 class AncDueTestCase(TestCase):
     def setUp(self):
@@ -208,6 +314,8 @@ class SendSmsApi(TestCase):
 class CountyApi(TestCase):
     def setUp(self):
         self.country=CountryTb.objects.create(country_name="India",country_code="91")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="NW")
+        self.country_hospital_name=HealthCenters.objects.create(hospital_name="CountryHospital",hospital_type="Country",hospital_address="testaddress",country_name=self.country,parent_hospital="parent",active=True)
     def test_county(self):
         response = self.client.get("/county/", data={'country_name':self.country})
         self.failUnlessEqual(response.status_code, 200)
@@ -220,6 +328,7 @@ class DisttabApi(TestCase):
     def test_district(self):
         response = self.client.get("/district/", data={'country_name':self.country,'county_name':self.county,'district_name':self.district})
         self.failUnlessEqual(response.status_code, 200)
+        print
 
 class SubdistrictTabApi(TestCase):
     def setUp(self):
@@ -227,7 +336,6 @@ class SubdistrictTabApi(TestCase):
         self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
-        #self.hospitals_name = HealthCenters.objects.filter(county_name=county_obj,hospital_type='County',active=True).values_list('hospital_name')
     def test_subdistrict(self):
         response = self.client.get("/subdistrict/", data={'country_name':self.country,'county_name':self.county,'district_name':self.district,'subdistrict_name':self.subdistrict})
         self.failUnlessEqual(response.status_code, 200)
@@ -248,11 +356,6 @@ class LocationsApi(TestCase):
         response = self.client.get("/location/")
         self.failUnlessEqual(response.status_code, 200)
 
-class LoginTestCase(TestCase):
-    def test_login(self):
-        response = self.client.get('/admin/')
-        self.assertRedirects(response, '/admin/login/?next=/admin/')
-
 class SaveUserMaintenanceAPI(TestCase):
     def test_login(self):
         userrole="ANM"
@@ -267,9 +370,66 @@ class SaveUserMaintenanceAPI(TestCase):
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
         self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
-        hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="subcenter",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,villages="dsfjkjk",parent_hospital="parent",active=True)
-        active=True
+        hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="Subcenter",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,villages="dsfjkjk",parent_hospital="parent",active=True)
+        self.hospital_name=HealthCenters.objects.create(hospital_name="PHCHospital",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="subdistricthospital",active=True)
+        self.subdistrict_hospital_name=HealthCenters.objects.create(hospital_name="SubDistrictHospital",hospital_type="SubDistrict",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="districthospital",active=True)
+        self.district_hospital_name=HealthCenters.objects.create(hospital_name="DistrictHospital",hospital_type="District",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,parent_hospital="countyhospital",active=True)
+        self.county_hospital_name=HealthCenters.objects.create(hospital_name="CountyHospital",hospital_type="County",hospital_address="testaddress",country_name=self.country,county_name=self.county,parent_hospital="countryhospital",active=True)
+        self.country_hospital_name=HealthCenters.objects.create(hospital_name="CountryHospital",hospital_type="Country",hospital_address="testaddress",country_name=self.country,parent_hospital="parent",active=True)
+        active="true"
         response = self.client.get("/saveusermaintenance/",
+                                   data={'country_name':self.country,'county_name':self.county,'district_name':self.district,
+                                         'subdistrict_name':self.subdistrict,'village':self.village,'userrole':userrole,'userid':userid,
+                                         'first_name':first_name,'last_name':last_name,'password':password,'mobile':mobile,'email':email,
+                                         'subcenter_name':hospital_name,"hospitals":hospital_name,'active':active
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        user = UserMasters.objects.all()[0]
+        self.assertEquals(user.country,self.country)
+
+        response = self.client.get("/saveusermaintenance/",
+                                   data={'country_name':self.country,'county_name':self.county,'district_name':self.district,
+                                         'subdistrict_name':self.subdistrict,'village':self.village,'userrole':"DOC",'userid':"phcdoc",
+                                         'first_name':first_name,'last_name':last_name,'password':password,'mobile':mobile,'email':email,
+                                         "hospitals":self.hospital_name,'active':active
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/saveusermaintenance/",
+                                   data={'country_name':self.country,'county_name':self.county,'district_name':self.district,
+                                         'subdistrict_name':self.subdistrict,'village':self.village,'userrole':"DOC",'userid':"subdoc",
+                                         'first_name':first_name,'last_name':last_name,'password':password,'mobile':mobile,'email':email,
+                                         "hospitals":self.subdistrict_hospital_name,'active':active
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/saveusermaintenance/",
+                                   data={'country_name':self.country,'county_name':self.county,'district_name':self.district,
+                                         'village':self.village,'userrole':"DOC",'userid':"disdoc",
+                                         'first_name':first_name,'last_name':last_name,'password':password,'mobile':mobile,'email':email,
+                                         "hospitals":self.district_hospital_name,'active':active
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/saveusermaintenance/",
+                                   data={'country_name':self.country,'county_name':self.county,
+                                         'village':self.village,'userrole':"DOC",'userid':"countydoc",
+                                         'first_name':first_name,'last_name':last_name,'password':password,'mobile':mobile,'email':email,
+                                         "hospitals":self.county_hospital_name,'active':active
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/saveusermaintenance/",
+                                   data={'country_name':self.country,
+                                         'village':self.village,'userrole':"DOC",'userid':"countrydoc",
+                                         'first_name':first_name,'last_name':last_name,'password':password,'mobile':mobile,'email':email,
+                                         "hospitals":self.country_hospital_name,'active':active
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+
+        response = self.client.get("/updateusermaintenance/",
                                    data={'country_name':self.country,'county_name':self.county,'district_name':self.district,
                                          'subdistrict_name':self.subdistrict,'village':self.village,'userrole':userrole,'userid':userid,
                                          'first_name':first_name,'last_name':last_name,'password':password,'mobile':mobile,'email':email,
@@ -281,7 +441,7 @@ class SaveUserMaintenanceAPI(TestCase):
 class SaveHealthCentersAPI(TestCase):
     def test_login(self):
         hospital_name="ou"
-        hostype="subcenter"
+        hostype="Subcenter"
         address="test"
         self.country=CountryTb.objects.create(country_name="India")
         self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
@@ -289,14 +449,73 @@ class SaveHealthCentersAPI(TestCase):
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
         self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
         parent_hos="test"
-        active=True
+        active="true"
         response = self.client.get("/savehospital/",
-                                   data={'hos_country':self.country,'hos_county':self.county,'hos_district':self.district,
-                                         'hos_subdistrict':self.subdistrict,'villages':self.village,'name':hospital_name,'active':active,
-                                         'type':hostype,'add':address,'parent_hos':parent_hos
+                                   data={'hos_country':self.country,
+                                         'name':"TestCountry",'active':active,
+                                         'type':'Country','add':address
 
         })
         self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/savehospital/",
+                                   data={'hos_country':self.country,'hos_county':self.county,
+                                         'name':"TestCounty",'active':active,
+                                         'type':'County','add':address,'parent_hos':"TestCountry"
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/savehospital/",
+                                   data={'hos_country':self.country,'hos_county':self.county,'hos_district':self.district,
+                                         'villages':self.village,'name':"TestDistrict",'active':active,
+                                         'type':'District','add':address,'parent_hos':"TestCounty"
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/savehospital/",
+                                   data={'hos_country':self.country,'hos_county':self.county,'hos_district':self.district,
+                                         'hos_subdistrict':self.subdistrict,'villages':self.village,'name':"TestSubDistrict",'active':active,
+                                         'type':'SubDistrict','add':address,'parent_hos':"TestDistrict"
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/savehospital/",
+                                   data={'hos_country':self.country,'hos_county':self.county,'hos_district':self.district,
+                                         'hos_subdistrict':self.subdistrict,'villages':self.village,'name':"TestPHC",'active':active,
+                                         'type':'PHC','add':address,'parent_hos':"TestSubDistrict"
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/savehospital/",
+                                   data={'hos_country':self.country,'hos_county':self.county,'hos_district':self.district,
+                                         'hos_subdistrict':self.subdistrict,'villages':self.village,'name':hospital_name,'active':active,
+                                         'type':hostype,'add':address,'parent_hos':"TestPHC"
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+
+        response = self.client.get("/updatehospital/",
+                                   data={'hos_country':"India",
+                                         'name':"TestCountry123",'hos_county':"null",'hos_district':"null",
+                                         'hos_subdistrict':"null",'villages':self.village,'active':active,
+                                         'type':'Country','add':address
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/updatehospital/",
+                                   data={'hos_country':"India",
+                                         'name':"TestCountry123",'hos_county':"fdsfjk",'hos_district':"null",
+                                         'hos_subdistrict':"null",'villages':self.village,'active':active,
+                                         'type':'County','add':address
+
+        })
+        self.failUnlessEqual(response.status_code, 200)
+
+class DataList(TestCase):
+    data_list('a',['a','b','c'])
+
+class ParentHosptal(TestCase):
+    parent_hospital('a',['a','b','c'])
+    parent_hospital('null',['a','b','c'])
 
 class HospitalValidateApi(TestCase):
 
@@ -316,8 +535,9 @@ class SaveDistrictApi(TestCase):
     def test_save_district(self):
         self.country=CountryTb.objects.create(country_name="Sample")
         self.county=CountyTb.objects.create(country_name=self.country,county_name="SampleCounty")
-        # self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="SampleDistrict")
-        response = self.client.get("/savedistrict/", data={'country':self.country,'county':self.county,'district':'SampleDistrict','active':True})
+        response = self.client.get("/savedistrict/", data={'country':self.country,'county':self.county,'district':'SampleDistrict','active':"true"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/updatedistrict/", data={'country':self.country,'county':self.county,'district':'SampleDistrictedited','active':"true"})
         self.failUnlessEqual(response.status_code, 200)
 
 class SaveSubDistrictApi(TestCase):
@@ -325,7 +545,9 @@ class SaveSubDistrictApi(TestCase):
         self.country=CountryTb.objects.create(country_name="Sample")
         self.county=CountyTb.objects.create(country_name=self.country,county_name="SampleCounty")
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="SampleDistrict")
-        response = self.client.get("/savesubdistrict/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':"SampleSub",'active':True})
+        response = self.client.get("/savesubdistrict/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':"SampleSub",'active':"true"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/updatesubdistrict/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':"SampleSubedited",'active':"true"})
         self.failUnlessEqual(response.status_code, 200)
 
 class SaveLocationApi(TestCase):
@@ -335,6 +557,10 @@ class SaveLocationApi(TestCase):
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="SampleDistrict123")
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhfasdas")
         response = self.client.get("/savelocation/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':self.subdistrict,'location':"TestLocation",'active':True})
+        self.failUnlessEqual(response.status_code, 200)
+        location = LocationTab.objects.all()
+        self.assertEquals(location.count(), 1)
+        response = self.client.get("/updatelocation/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':self.subdistrict,'location':"TestLocationedited",'active':True})
         self.failUnlessEqual(response.status_code, 200)
 
 class SubdistrictValidateApi(TestCase):
@@ -356,13 +582,11 @@ class DistrictValidate(TestCase):
         response = self.client.get("/districtvalidate/", data={'dname':'dulla','id':123456,'district_name':self.district})
 
 class UserValidateApi(TestCase):
-
     def test_user_validate(self):
         response = self.client.get("/uservalidate/", data={'uname':'sudheer','id':123456})
         self.failUnlessEqual(response.status_code, 200)
 
 class SavePasswordApi(TestCase):
-
     def test_save_password(self):
         response = self.client.get("/savepassword/", data={'password':'14525968','id':123456})
         self.failUnlessEqual(response.status_code, 200)
@@ -370,12 +594,13 @@ class SavePasswordApi(TestCase):
 class SubcenterApi(TestCase):
     def setUp(self):
         self.country=CountryTb.objects.create(country_name="India")
-        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
-        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
-        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
-        self.location = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="SZ")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="Hyderabad")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="SRNagar")
+        self.location = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="BKGuda")
+        hospital_name=HealthCenters.objects.create(hospital_name="testhospitalsub",hospital_type="Subcenter",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,villages="BKGuda",parent_hospital="parent",active=True)
     def test_subcenter(self):
-        response = self.client.get("/subcenter/", data={'location':self.location})
+        response = self.client.get("/subcenter/", data={'location':"testhospitalsub"})
         self.failUnlessEqual(response.status_code, 200)
 
 class ParentHospitalApi(TestCase):
@@ -385,12 +610,50 @@ class ParentHospitalApi(TestCase):
         self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
-        #self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
-        #hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="subcenter",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,villages="dsfjkjk",parent_hospital="parent",active=True)
+        self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+        self.Subcenter_hospital_name=HealthCenters.objects.create(hospital_name="newsubcenterhospital",hospital_type="Subcenter",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,villages=self.village,parent_hospital="parent",active=True)
+        self.phc_hospital_name=HealthCenters.objects.create(hospital_name="newPHCHospital",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="subdistricthospital",active=True)
+        self.subdistrict_hospital_name=HealthCenters.objects.create(hospital_name="newSubDistrictHospital",hospital_type="SubDistrict",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="districthospital",active=True)
+        self.district_hospital_name=HealthCenters.objects.create(hospital_name="newDistrictHospital",hospital_type="District",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,parent_hospital="countyhospital",active=True)
+        self.county_hospital_name=HealthCenters.objects.create(hospital_name="newCountyHospital",hospital_type="County",hospital_address="testaddress",country_name=self.country,county_name=self.county,parent_hospital="countryhospital",active=True)
+        self.country_hospital_name=HealthCenters.objects.create(hospital_name="newCountryHospital",hospital_type="Country",hospital_address="testaddress",country_name=self.country,active=True)
         response = self.client.get("/parenthospital/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':self.subdistrict,'hos_type':hos_type})
         self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/parenthospital/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':self.subdistrict,'hos_type':"PHC"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/parenthospital/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':self.subdistrict,'hos_type':"SubDistrict"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/parenthospital/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':self.subdistrict,'hos_type':"District"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/parenthospital/", data={'country':self.country,'county':self.county,'district':self.district,'subdistrict':self.subdistrict,'hos_type':"County"})
+        self.failUnlessEqual(response.status_code, 200)
+
 
 class ResetpasswordApi(TestCase):
     def test_reser_password(self):
         response = self.client.get("/resetpassword/", data={'resetpassword':'123456'})
         self.failUnlessEqual(response.status_code, 200)
+
+class DocSMSTest(TestCase):
+    def test_docsms(self):
+        wph="9985408792"
+        pph="9550726256"
+        wsms="testw"
+        psms="sms p"
+        docsms(workerph=wph,patientph=pph,worker_sms=wsms,patientsms=psms)
+
+class POCUpdateTest(TestCase):
+    def test_poc_update(self):
+        visit_id = "0663b5b4-49a5-4e48-bece-f88094a44c52"
+        entity_id = "f3d77a5a-8c51-4f44-817f-acf7c821118f"
+        document_id="380b0e1a64b294e8294cbb55c5086ea5"
+        doctor_id="unittest"
+        pending="unittest"
+        patient_ph="123456789"
+        patient_name="test"
+        poc_data = "%7B%22investigations%22%3A%5B%22laboratory-Blood+Test+for+Human+immunodeficiency+virus+%28HIV%29+antibody%22%5D%2C%22planofCareDate%22%3A%2204-11-2015%22%2C%22drugs%22%3A%5B%7B%22dosage%22%3A%2235+ml%22%2C%22frequency%22%3A%22Every+12+Hours%22%2C%22drugNoOfDays%22%3A%226%22%2C%22drugQty%22%3A%228%22%2C%22direction%22%3A%22before+break+fast%22%2C%22drugName%22%3A%22Protein+and+Fatty+Acid+Supplement%22%7D%5D%2C%22diagnosis%22%3A%5B%22O07.5+-+Other+and+unspecified+failed+attempted+abortion%2C+complicated+by+genital+tract+and+pelvic+infection%22%5D%2C%22visitNumber%22%3A%221%22%2C%22doctorName%22%3A%22neha%22%2C%22advice%22%3A%22my+advice%22%2C%22documentId%22%3A%22c04214947963000c8d8d4e7f9e6cbeca%22%2C%22visitType%22%3A%22ANC%22%7D"
+        response = self.client.get("/pocupdate/", data={'visitid':visit_id,'entityid':entity_id,'docid':document_id,'doctorid':doctor_id,
+                                                        'pending':pending,'patientph':patient_ph,'patientname':patient_name,
+                                                        'pocinfo':'{"investigations":"Test blood"}'})
+        self.failUnlessEqual(response.status_code, 200)
+

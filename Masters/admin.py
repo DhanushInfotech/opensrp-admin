@@ -226,7 +226,7 @@ class HealthCenterAdmin(admin.ModelAdmin):
         urls = super(HealthCenterAdmin, self).get_urls()
         my_urls = patterns('',
                 url(r'add/$', 'Masters.views.admin_hospital',name='hospital'),
-                url(r'gettype/$', 'Masters.views.get_hospital',name='hospital'),
+                #url(r'gettype/$', 'Masters.views.get_hospital',name='hospital'),
                 url(r'(?P<hospital_id>\d+)/$', 'Masters.views.edit_hospital',name='edithospital'),
                 )
         return my_urls + urls

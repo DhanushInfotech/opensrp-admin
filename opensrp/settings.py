@@ -120,10 +120,10 @@ if 'test' in sys.argv:
     }
 
 DISEASES = ('Pallor',
-'Swelling / Edema',
+'Swelling',
 'Bleeding',
 'Jaundice',
-'Fits / Convulsions',
+'Convulsions',
 'Difficult Breathing',
 'Bad Headache',
 'Blurred Vision',
@@ -144,7 +144,6 @@ DISEASES = ('Pallor',
 'Cough',
 'Diarrhea',
 'Fever',
-'Convulsions',
 'Vomiting')
 
 

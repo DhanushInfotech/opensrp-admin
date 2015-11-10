@@ -11,10 +11,10 @@ from multiselectfield import MultiSelectField
 
 class DrugInfo(models.Model):
     ANC = (('Pallor', 'Pallor'),
-               ('Swelling / Edema', 'Swelling / Edema'),
+               ('Swelling', 'Swelling / Edema'),
                ('Bleeding', 'Bleeding'),
                ('Jaundice', 'Jaundice'),
-               ('Fits / Convulsions', 'Fits / Convulsions'))
+               ('Convulsions', 'Fits / Convulsions'))
     PNC = (('Difficult Breathing', 'Difficult Breathing'),
                ('Bad Headache', 'Bad Headache'),
                ('Blurred Vision', 'Blurred Vision'),
@@ -161,9 +161,10 @@ class PocInfo(models.Model):
     pending = models.CharField(max_length=300, blank=True)
     docid = models.CharField(max_length=50, blank=True)
     timestamp = models.DateTimeField(blank=True, null=True)
+    wifename = models.CharField(max_length=200, blank=True)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'poc_table'
         verbose_name_plural="POC INFO"
 	verbose_name='POC INFO'
@@ -183,7 +184,7 @@ class PocBackup(models.Model):
     docid = models.CharField(max_length=100, blank=True)
     poc = models.CharField(max_length=1000, blank=True)
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'poc_backup'
 
 class UserMasters(models.Model):
@@ -416,7 +417,7 @@ class VisitConfiguration(models.Model):
     anc_visit4_from_week = models.IntegerField(blank=True, null=True)
     anc_visit4_to_week = models.IntegerField(blank=True, null=True)
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'visit_configuration'
         verbose_name_plural="VISIT CONFIGURATION"
         verbose_name="VISIT CONFIGURATION"
