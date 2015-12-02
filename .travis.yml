@@ -9,5 +9,5 @@ install:
 # command to run tests
 script: 
   - coverage run --source='.' manage.py test
-  - coverage report -m | coveralls:report
+  - coverage report -m
 after_success: coveralls
