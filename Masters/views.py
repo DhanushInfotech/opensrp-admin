@@ -1,5 +1,4 @@
 from django.shortcuts import render
-import redis
 from Masters.models import *
 from django.http import HttpResponse
 import json
