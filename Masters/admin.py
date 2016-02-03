@@ -275,6 +275,29 @@ class FormFieldsAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+class AnnualTargetAdmin(admin.ModelAdmin):
+    list_display = ('service_provider','indicator','target','start_date','end_date',)
+    search_fields = ('service_provider', )
+    list_filter = ('indicator',)
+
+    def get_actions(self, request):
+        actions = super(AnnualTargetAdmin, self).get_actions(request)
+        del actions['delete_selected']
+        return actions
+
+    def has_delete_permission(self, request, obj=None):
+        return False    
+
+class DimIndicatorAdmin(admin.ModelAdmin):
+    list_display = ('indicator',)
+
+    def get_actions(self, request):
+        actions = super(DimIndicatorAdmin, self).get_actions(request)
+        del actions['delete_selected']
+        return actions
+
+    def has_delete_permission(self, request, obj=None):
+        return False    
 
 admin.site.register(DrugInfo,DrugInfoAdmin)
 admin.site.register(Frequency,FrequencyAdmin)
@@ -292,3 +315,5 @@ admin.site.register(LocationTab,LocationTabAdmin)
 admin.site.register(HealthCenters,HealthCenterAdmin)
 admin.site.register(AppConfiguration,AppConfigurationAdmin)
 admin.site.register(FormFields,FormFieldsAdmin)
+admin.site.register(AnnualTarget,AnnualTargetAdmin)
+admin.site.register(DimIndicator,DimIndicatorAdmin)

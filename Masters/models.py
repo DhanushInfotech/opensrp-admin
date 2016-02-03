@@ -402,6 +402,7 @@ class FormFields(models.Model):
         db_table = "form_fields"
         verbose_name_plural="FORM FIELDS"
         verbose_name="FORM FIELDS"
+    
     def __unicode__(self):
         field = str(self.form_name).replace("_"," ")
         return '%s form' %(field)
@@ -422,4 +423,49 @@ class VisitConfiguration(models.Model):
         verbose_name_plural="VISIT CONFIGURATION"
         verbose_name="VISIT CONFIGURATION"
 
+class AppReporting(models.Model):
+    visitentityid = models.CharField(max_length=50, blank=True, null=True)
+    entityidec = models.CharField(max_length=50)
+    patient_name = models.CharField(max_length=100)
+    anm_id = models.CharField(max_length=25)
+    activity = models.CharField(max_length=25)
+    indicators = models.CharField(max_length=50, blank=True, null=True)
+    indicator_count = models.IntegerField(blank=True, null=True)
+    date = models.CharField(max_length=50)
+    location = models.CharField(max_length=50)
+    child_weight = models.IntegerField(blank=True, null=True)
+    other_date = models.CharField(max_length=50, blank=True, null=True)
+    visit_location = models.CharField(max_length=50, blank=True, null=True)
+    dob = models.CharField(max_length=200, blank=True, null=True)
 
+    class Meta:
+        #managed = False
+        db_table = 'app_reporting'
+
+
+class AnnualTarget(models.Model):
+    service_provider = models.ForeignKey('UserMasters', db_column='service_provider')
+    indicator = models.ForeignKey('DimIndicator', db_column='indicator')
+    target = models.CharField(max_length=20)
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    class Meta:
+        #managed = False
+        db_table = 'annual_target'
+        verbose_name_plural="ANNUAL TARGET"
+        verbose_name="ANNUAL TARGET"
+
+    def __unicode__(self):
+        return self.service_provider
+
+
+class DimIndicator(models.Model):
+    indicator = models.CharField(unique=True, max_length=100)
+
+    class Meta:
+        #managed = False
+        db_table = 'dim_indicator'
+    
+    def __unicode__(self):
+        return self.indicator

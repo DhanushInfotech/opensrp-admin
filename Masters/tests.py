@@ -657,3 +657,115 @@ class POCUpdateTest(TestCase):
                                                         'pocinfo':'{"investigations":"Test blood"}'})
         self.failUnlessEqual(response.status_code, 200)
 
+class VisitConfigurationTest(TestCase):
+    def setUp(self):
+    	VisitConfiguration.objects.create(anc_visit1_from_week=4, anc_visit1_to_week=6,anc_visit2_from_week=8, anc_visit2_to_week=10,
+                                          anc_visit3_from_week=12, anc_visit3_to_week=14,anc_visit4_from_week=16, anc_visit4_to_week=18)
+    def test_visit_conf(self):
+        visit = VisitConfiguration.objects.get(anc_visit1_from_week=4)
+        self.assertEquals(visit.anc_visit1_to_week,6)
+
+class AppReportingTest(TestCase):
+     def test_app_reporting(self):
+        visitentityid = "0663b5b4-49a5-4e48-bece-f88094a44c52"
+        entityidec = "f3d77a5a-8c51-4f44-817f-acf7c821118f"
+        patient_name = "Test patient"
+        anm_id = "TestAnm"
+        activity = "anc"
+        #indicator = "asdasdsa"
+        indicator_count = 0
+        date = "2016-02-01"
+        location = "Chemoinoi"
+        child_weight = 0
+        visit_date = "2016-01-10"
+        visit_location = "elsewhere"
+        child_dob = "2015-11-23"
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                                     anm_id=anm_id,activity=activity,indicators="candom",indicator_count=1,
+                                     date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                                     visit_location=visit_location,dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                                     anm_id=anm_id,activity=activity,indicators="tt1",indicator_count=1,
+                                     date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                                     visit_location=visit_location,dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                                     anm_id=anm_id,activity=activity,indicators="tt2",indicator_count=1,
+                                     date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                                     visit_location=visit_location,dob=child_dob)
+
+
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                             visit_location="dh",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="dh",dob=child_dob)
+
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="condom",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="ecp",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="iud",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date	,
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="condom",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="ecp",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="iud",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="child",indicators="bcg opv_0 hepb_0 pentavalent_1 BF",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="child_illness",indicators="diarrhea_dehydration",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)        
+
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="Mortality",indicators="anctopnc_MaternalDeath",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="Mortality",indicators="anc_MaternalDeath",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="Mortality",indicators="pnc_MaternalDeath",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        report = AppReporting.objects.get(indicators="tt1")
+        self.assertEquals(report.anm_id,"TestAnm")
+        #activity=ANC&anmid=anm111
+        response = self.client.get("/reporting/", data={"activity":"ANC","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/reporting/", data={"activity":"PREGNANCY","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/reporting/", data={"activity":"FP","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/reporting/", data={"activity":"child","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/reporting/", data={"activity":"mortality","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
