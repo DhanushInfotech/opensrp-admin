@@ -1,0 +1,14 @@
+language: python
+python:
+  - "2.7"
+# command to install dependencies
+install: 
+  - pip install -r requirement.txt
+  - pip install coverage
+  - pip install coveralls --use-mirrors
+# command to run tests
+script: 
+  - coverage run --source='.' manage.py test
+  - coverage report -m
+after_success:
+  - coveralls  

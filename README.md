@@ -1,5 +1,10 @@
-# opensrp-admin
-This is a standalone admin module to create and update Masters
+<a href="https://travis-ci.org/DhanushInfotech/opensrp-plugin">
+<img src="https://travis-ci.org/DhanushInfotech/opensrp-plugin.svg?branch=master" ></img></a>
+
+<a href='https://coveralls.io/github/DhanushInfotech/opensrp-plugin?branch=django-module'><img src='https://coveralls.io/repos/DhanushInfotech/opensrp-plugin/badge.svg?branch=django-module&service=github' alt='Coverage Status' /></a> 
+
+# opensrp-plugin
+This is a standalone admin module to create and update Master data
 
 1. Manage user accounts
 
@@ -30,6 +35,8 @@ Installation
 
         pip install -r requirement.txt
 
+        pip install coverage
+        
         python manage.py syncdb --noinput
 
         python manage.py migrate
@@ -40,4 +47,5 @@ Installation
 
 * run test
 
-        python manage.py test Masters
+        coverage run --source='.' manage.py test
+        coverage report -m
