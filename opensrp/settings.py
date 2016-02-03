@@ -155,6 +155,13 @@ DPTBOOSTER2_DAYS=1799
 
 CHILD_BIRTH_WEIGHT_IN_KGS = 4
 
+import sys
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase'
+    }
+
 try:
     from localsettings import *
 except ImportError:
