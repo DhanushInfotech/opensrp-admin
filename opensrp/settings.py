@@ -162,6 +162,8 @@ if 'test' in sys.argv:
         'NAME': 'mydatabase'
     }
 
+COUCHDB="202.153.34.169:5984"
+
 try:
     from localsettings import *
 except ImportError:
