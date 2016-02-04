@@ -29,6 +29,27 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'drishti',
+        'USER': 'dhanush',
+        'PASSWORD': 'dhanush',
+        'HOST': '202.153.34.169',
+        'PORT': '5432',
+        'OPTIONS': {
+           'options': '-c search_path=report'
+        }
+    },
+     'dynamic_data':{
+       'ENGINE': 'django.db.backends.sqlite3',
+       'NAME':'test',
+       'USER':'',
+       'PASSWORD':''
+     },
+    }
+
+
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
@@ -58,26 +79,6 @@ WSGI_APPLICATION = 'opensrp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'drishti',
-        'USER': 'dhanush',
-        'PASSWORD': 'dhanush',
-        'HOST': '202.153.34.169',
-        'PORT': '5432',
-        'OPTIONS': {
-           'options': '-c search_path=report'
-        }
-    },
- 'dynamic_data':{
-   'ENGINE': 'django.db.backends.sqlite3',
-   'NAME':'test',
-   'USER':'',
-   'PASSWORD':''
- },
-}
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
 
@@ -102,6 +103,8 @@ STATIC_URL = '/static/'
 # STATIC_ ROOT= '/static/'
 MEDIA_URL = '/media/'
 
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 ADMIN_MEDIA_PREFIX = '/static/admin/'
@@ -109,15 +112,7 @@ ADMIN_MEDIA_PREFIX = '/static/admin/'
 TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'templates')]
 DRUG_MAP = {"CHILD":0,"PNC":1,"ANC":2}
 USER_ROLE={"ANM":"ROLE_USER","PHC":"ROLE_PHC_USER","DOC":"ROLE_DOC_USER"}
-STATICFILES_DIRS = (BASE_DIR + '/static/',)
-
-
-import sys
-if 'test' in sys.argv:
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'mydatabase'
-    }
+#STATICFILES_DIRS = (BASE_DIR + '/static/',)
 
 DISEASES = ('Pallor',
 'Swelling',
@@ -148,3 +143,28 @@ DISEASES = ('Pallor',
 
 
 PHONE_NUMBER_LENGTH = 10
+
+OPV1_PENTAVALENT1_DAYS=41
+OPV2_PENTAVALENT2_DAYS=69
+OPV3_PENTAVALENT3_DAYS=97
+MEASLES_DAYS=269
+MMR_DAYS=364
+MEASLES2_DPTBOOSTER1_DAYS=539
+OPVBOOSTER_DAYS=1439
+DPTBOOSTER2_DAYS=1799
+
+CHILD_BIRTH_WEIGHT_IN_KGS = 4
+
+import sys
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase'
+    }
+
+COUCHDB="202.153.34.169:5984"
+
+try:
+    from localsettings import *
+except ImportError:
+    pass

@@ -39,7 +39,6 @@ def druginfo(request):
     return HttpResponse(result_json)
 
 def poc_update(request):
-    patientph="9985408792"
     if request.method =="GET":
         document_id=request.GET.get("docid","")
         poc_info=request.GET.get("pocinfo","")
@@ -103,11 +102,19 @@ def poc_update(request):
         update_poc=PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(pending=str(pending),docid=str(docid))
     #Updating backup table with latest poc/pending status info
     visit_info = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).values_list('visitentityid','entityidec','wifename')
+    print visitid
+    print entityid
+    print visit_info
+    print "before 0"
     if len(pending)==0:
         anm_details = UserMasters.objects.filter(user_id=str(anmId)).values_list('phone_number','country__country_name')
         anm_country = str(anm_details[0][1])
         anm_phone = str(anm_details[0][0])
-        patientname=visit_info[0][2]
+        patientname="patient"
+        print visit_info
+        if str(visit_info[0][2]) != "NULL":
+            patientname=visit_info[0][2]
+        
         patient_sms = "Dear %s your prescription " %patientname
         if len(poc_details["investigations"]) > 0:
             patient_sms+=" Investigations: "
@@ -127,7 +134,7 @@ def poc_update(request):
         anm_phone = country_code+anm_phone[-int(settings.PHONE_NUMBER_LENGTH):]
         patient_phone = country_code+patientph[-int(settings.PHONE_NUMBER_LENGTH):]
         anm_sms,patient_sms = docsms(workerph=anm_phone,patientph=patient_phone,worker_sms=anm_sms,patientsms=patient_sms)
-        del_poc = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).delete()
+        #del_poc = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).delete()
     return HttpResponse(json.dumps({"status":"success"}))
 
 def docsms(workerph=None,patientph=None,worker_sms=None,patientsms=None):
@@ -160,7 +167,7 @@ def docinfo(request):
             if len(entity[2])>1 and str(doc_name) != str(entity[3]):
                 continue
     	entity_detail_id=str(entity[1])
-        ancvisit_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(entity[0])+"%22&descending=true"
+        ancvisit_detail="curl -s -H -X GET http://"+settings.COUCHDB+"/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(entity[0])+"%22&descending=true"
         visit_output = commands.getoutput(ancvisit_detail)
         visit_data1 = json.loads(visit_output)
         row = visit_data1['rows']
@@ -278,7 +285,8 @@ def docinfo(request):
                     visit["entityid"] = entity[0]
                 visit_data.append(visit)
 
-        entity_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+entity_detail_id+"%22&descending=true"
+        entity_detail="curl -s -H -X GET http://"+settings.COUCHDB+"/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+entity_detail_id+"%22&descending=true"
+        #print entity_detail
         poc_output=commands.getoutput(entity_detail)
         poutput=json.loads(poc_output)
         row1 = poutput['rows']
@@ -287,7 +295,7 @@ def docinfo(request):
             if len(row1)>0:
                 for i in range(len(row1)):
                     for data in row1[i]["value"][1]['form']['fields']:
-                        if row1[i]['value'][0] == "anc_registration_oa" or row1[i]['value'][0]=="anc_registration" or row1[i]['value'][0]=="anc_reg_edit_oa" or row1[i]['value'][0]=="anc_reg_edit":
+                        if row1[i]['value'][0] == "anc_registration_oa" or row1[i]['value'][0]=="anc_registration" or row1[i]['value'][0]=="anc_reg_edit_oa" or row1[i]['value'][0]=="anc_reg_edit" or row1[i]['value'][0]=="child_registration_ec" or row1[i]['value'][0]=="delivery_outcome":
                             key=data.get('name')
                             value=data.get('value')
                             if key=='edd':
@@ -303,6 +311,8 @@ def docinfo(request):
                                     visit['edd']=edd
                                     visit['lmp']=lmp
                                     visit_data.append(visit)
+                            elif key == 'gender':
+                                visit['gender']=value    
                         # elif row1[i]['value'][0] == "child_registration_oa":
                         #     key = data.get('name')
                         #     if 'value' in child_data.keys():
@@ -367,12 +377,12 @@ def docinfo(request):
                         result["pending"]=str(entity[2])
                     display_result.append(result)
             else:
-                entity_curl_child="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(entity[0])+"%22"
+                entity_curl_child="curl -s -H -X GET http://"+settings.COUCHDB+"/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(entity[0])+"%22"
                 child_output = commands.getoutput(entity_curl_child)
                 child_data = json.loads(child_output)
                 child_rows = child_data['rows']
                 for child in child_rows:
-                    if str(child['value'][0])=='child_registration_oa':
+                    if str(child['value'][0])=='child_registration_oa' :
                         for c in child["value"][1]['form']['fields']:
                             key = c.get('name')
                             if 'value' in c.keys():
@@ -380,6 +390,7 @@ def docinfo(request):
                             else:
                                 value=''
                             if key == 'gender':
+                            	print "gender"
                                 visit['gender']=value
                             elif key == 'name':
                                 visit['name']=value
@@ -394,6 +405,7 @@ def docinfo(request):
                             elif key == 'motherName':
                                 temp={}
                                 temp={"wifeName":value}
+                                print temp
                                 result.update(temp)
                             elif key == 'fatherName':
                                 temp={}
@@ -456,8 +468,10 @@ def auth(request):
         location["subCenter"]=subcenter.replace(" ","")
         location["villages"]=str(anm_details[0][5]).split(',')
         drug_details = drug_info()
+        print user_details[0][3]
         config_fields = AppConfiguration.objects.filter(country_name=str(user_details[0][3])).values_list('wife_age_min','wife_age_max','husband_age_min','husband_age_max','temperature_units','is_highrisk')
         form_fields = FormFields.objects.filter(country=str(user_details[0][3])).values_list("form_name","field1","field2","field3","field4","field5")
+        print config_fields
         if len(config_fields) >0:
             config_data = {"wifeAgeMin":config_fields[0][0],"wifeAgeMax":config_fields[0][1],"husbandAgeMin":config_fields[0][2],"husbandAgeMax":config_fields[0][3],"temperature":config_fields[0][4]}
         form_values=[]
@@ -483,7 +497,7 @@ def vitalsdata(request):
     vital_readings=[]
     if request.method == 'GET':
         visitid = request.GET.get('visit','')
-    ancvisit_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(visitid)+"%22&descending=True"
+    ancvisit_detail="curl -s -H -X GET http://"+settings.COUCHDB+"/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(visitid)+"%22&descending=True"
     visit_output = commands.getoutput(ancvisit_detail)
     visit_data = json.loads(visit_output)
     visit_details = visit_data['rows']
@@ -588,6 +602,8 @@ def admin_hospital(request):
     c.update(csrf(request))
     return render_to_response('addhospital1.html',{'x':country_name,'csrf_token':c['csrf_token']})
 
+#from django.views.decorators.csrf import csrf_exempt
+#@csrf_exempt
 def save_hospital(request):
     if request.method == 'GET':
         hos_name = request.GET.get('name','')
@@ -600,6 +616,12 @@ def save_hospital(request):
         villages = request.GET.get('hos_village','')
         parenthos = request.GET.get('parent_hos','')
         active=request.GET.get('active','')
+#    if request.method == 'POST':
+#        hos_name = request.POST.get('name','')
+
+#   print hos_name,"post"
+#    pront
+
     status = 0
     if str(active) == 'true':
         status = 1
@@ -1021,19 +1043,19 @@ def save_password(request):
     pwd.update(password_name)
     password = pwd.hexdigest()
     user_password = UserMasters.objects.filter(id=row_id).update(password=str(password))
-    user_curl = "curl -s -H -X GET http://202.153.34.169:5984/drishti/_design/DrishtiUser/_view/by_username?key="+"%22"+str(user_id)+"%22"
+    user_curl = "curl -s -H -X GET http://"+settings.COUCHDB+"/drishti/_design/DrishtiUser/_view/by_username?key="+"%22"+str(user_id)+"%22"
     user_data = commands.getoutput(user_curl)
     output = json.loads(user_data)
     output = dict(output)
     row = output['rows']
     if len(row)>0:
         id_val = dict(output['rows'][0])
-        rev_curl = "curl -s -H -X GET http://202.153.34.169:5984/drishti/"+id_val['id']
+        rev_curl = "curl -s -H -X GET http://"+settings.COUCHDB+"/drishti/"+id_val['id']
         rev_data = commands.getoutput(rev_curl)
         rev_data = dict(json.loads(rev_data))
-        delet_curl = "curl -X DELETE http://202.153.34.169:5984/drishti/"+id_val['id']+"/?rev\="+rev_data['_rev']
+        delet_curl = "curl -X DELETE http://"+settings.COUCHDB+"/drishti/"+id_val['id']+"/?rev\="+rev_data['_rev']
         user_data = commands.getoutput(delet_curl)
-    cmd = '''curl -s -H Content-Type:application/json -d '{"docs": [{"type": "DrishtiUser","username": "%s","password": "%s","active": true,"roles": ["%s"]  } ]}' -X POST http://202.153.34.169:5984/drishti/_bulk_docs''' %(str(user_id),str(password),str(user_role))
+    cmd = '''curl -s -H Content-Type:application/json -d '{"docs": [{"type": "DrishtiUser","username": "%s","password": "%s","active": true,"roles": ["%s"]  } ]}' -X POST http://"+settings.COUCHDB+"/drishti/_bulk_docs''' %(str(user_id),str(password),str(user_role))
     res = commands.getstatusoutput(cmd)
     result={'res':"success"}
     x=json.dumps(result)
@@ -1489,10 +1511,12 @@ def docoverview(request):
         o_entityid =request.GET.get("entityid","")
     display_result=[]
     overview_data = []
-    overview_visit_curl = ancvisit_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(o_visitid)+"%22&descending=true"
+    overview_visit_curl = ancvisit_detail="curl -s -H -X GET http://"+settings.COUCHDB+"/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(o_visitid).lower()+"%22&descending=true"
+    print overview_visit_curl
     overview_visit_output = commands.getoutput(overview_visit_curl)
     overview_visit_details = json.loads(overview_visit_output)
     overview_visit_data = overview_visit_details["rows"]
+    #print overview_visit_data
     for event in overview_visit_data:
         overview_events = {}
         if str(event['value'][0]) == 'pnc_visit' or str(event['value'][0]) == 'pnc_visit_edit':
@@ -1526,7 +1550,7 @@ def docoverview(request):
             overview_events["docPocInfo"]=f(copyf(fetched_dict,"name","docPocInfo"))
             overview_events['visit_type'] = 'PNC'
             overview_events['server_version'] = event["value"][-1]
-            overview_events['id'] = event["id"]
+            overview_events['documentId'] = event["id"]
             overview_data.append(overview_events)
         elif str(event['value'][0]) == 'anc_visit' or str(event['value'][0]) == 'anc_visit_edit':
             anc_tags = ["ancVisitNumber","ancNumber","ancVisitPerson","ancVisitDate","riskObservedDuringANC","bpSystolic","bpDiastolic",
@@ -1550,7 +1574,7 @@ def docoverview(request):
             overview_events["docPocInfo"]=f(copyf(fetched_dict,"name","docPocInfo"))
             overview_events['visit_type'] = 'ANC'
             overview_events['server_version'] = event["value"][-1]
-            overview_events['id'] = event["id"]
+            overview_events['documentId'] = event["id"]
             overview_data.append(overview_events)
         elif str(event['value'][0]) == 'child_illness' or str(event['value'][0]) == 'child_illness_edit':
 
@@ -1575,7 +1599,308 @@ def docoverview(request):
             overview_events["docPocInfo"]=f(copyf(fetched_dict,"name","docPocInfo"))
             overview_events['visit_type'] = 'CHILD'
             overview_events['server_version'] = event["value"][-1]
-            overview_events['id'] = event["id"]
+            overview_events['documentId'] = event["id"]
             overview_data.append(overview_events)
     end_res= json.dumps(overview_data)
     return HttpResponse(end_res)
+
+def app_report(request):
+    if request.method == "GET":
+        activity = str(request.GET.get("activity","").upper())
+        anmid = str(request.GET.get("anmid",""))
+    if activity == "ANC":
+        report = anc_report(anmid)
+    elif activity == "PREGNANCY":
+        report = deliveryreport(anmid)
+    elif activity == "FP":
+        report = fpreport(anmid)
+    elif activity == "CHILD":
+        report = childreport(anmid)
+    elif activity == "MORTALITY":
+        report = mortalityreport(anmid)
+    return HttpResponse(json.dumps(report))
+
+def mortalityreport(anmid):
+    cur = connection.cursor()
+    query = "SELECT * FROM app_reporting WHERE activity = 'Mortality' and anm_id = '%s';" %anmid
+    cur.execute(str(query))
+    mortality_details = cur.fetchall()
+    current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
+    month = current_date.split("-")[1]
+    year = current_date.split("-")[0]
+    total_mortality_report={"name":"Total Mother Mortality","month":0,"year":0,"annual_target":0,"percentage":0}
+    mother_mortality_anc_report={"name":"Mother mortality(during ANC)","month":0,"year":0,"annual_target":0,"percentage":0}
+    mother_mortality_delivery_report={"name":"Mother mortality(during Delivery)","month":0,"year":0,"annual_target":0,"percentage":0}
+    mortality_report=[]
+    for mortality in mortality_details:
+        visit_date = mortality[-6]
+        visit_month = visit_date.split("-")[1]
+        visit_year =visit_date.split("-")[0]
+        if year == visit_year and month == visit_month:
+            print mortality[6]
+            if str(mortality[6])=='anc_MaternalDeath':
+                mother_mortality_anc_report["month"]+=1
+                total_mortality_report["month"]+=1
+                mother_mortality_anc_report["year"]+=1
+                total_mortality_report["year"]+=1
+            elif str(mortality[6])=='anctopnc_MaternalDeath':
+                mother_mortality_delivery_report["month"]+=1
+                total_mortality_report["month"]+=1
+                mother_mortality_delivery_report["year"]+=1
+                total_mortality_report["year"]+=1
+            else:
+                total_mortality_report["month"]+=1
+                total_mortality_report["year"]+=1
+        elif year == visit_year:
+            if str(mortality[6])=='anc_MaternalDeath':
+                mother_mortality_anc_report["year"]+=1
+                total_mortality_report["year"]+=1
+            elif str(mortality[6])=='anctopnc_MaternalDeath':
+                mother_mortality_delivery_report["year"]+=1
+                total_mortality_report["year"]+=1
+            else:
+                total_mortality_report["year"]+=1
+    mortality_report.append(total_mortality_report)
+    mortality_report.append(mother_mortality_anc_report)
+    mortality_report.append(mother_mortality_delivery_report)
+    return mortality_report
+
+def childreport(anmid):
+    cur = connection.cursor()
+    query = "SELECT * FROM app_reporting WHERE activity IN ('child','child_oa') and anm_id = '%s';" %anmid
+    cur.execute(str(query))
+    child_details = cur.fetchall()
+    current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
+    month = current_date.split("-")[1]
+    year = current_date.split("-")[0]
+    bcg_report={"name":"BCG","month":0,"year":0,"annual_target":0,"percentage":0}
+    opv_report={"name":"OPV","month":0,"year":0,"annual_target":0,"percentage":0}
+    pentavalent_report={"name":"PENTAVALENT 1","month":0,"year":0,"annual_target":0,"percentage":0}
+    age_1_report={"name":"No. of children (0-1 Year)","month":0,"year":0,"annual_target":0,"percentage":0}
+    age_5_report={"name":"No. of children (0-5 Year)","month":0,"year":0,"annual_target":0,"percentage":0}
+    diarrhea_report={"name":" No. of children had Diarrhea episode","month":0,"year":0,"annual_target":0,"percentage":0}
+    bf_report={"name":"Exclusively BF within 1 hr of birth","month":0,"year":0,"annual_target":0,"percentage":0}
+    hep_report={"name":"HEP","month":0,"year":0,"annual_target":0,"percentage":0}
+    infant_balance_report={"name":"Infant Balance (Total)","month":0,"year":0,"annual_target":0,"percentage":0}
+    child_oa_report={"name":"Infant Balance (O/A Infants)","month":0,"year":0,"annual_target":0,"percentage":0}
+    low_weight_report={"name":"Low birth weight","month":0,"year":0,"annual_target":0,"percentage":0}
+    weighed_report={"name":"Number of infants weighed at birth","month":0,"year":0,"annual_target":0,"percentage":0}
+    child_report=[]
+    for child in child_details:
+        visit_date = child[-6]
+        visit_month = visit_date.split("-")[1]
+        visit_year =visit_date.split("-")[0]
+        child_dob = child[-1]
+        dob_month = visit_date.split("-")[1]
+        dob_year =visit_date.split("-")[0]
+        age_in_days = abs((datetime.strptime(current_date, "%Y-%m-%d")-datetime.strptime(str(child[-1]), "%Y-%m-%d")).days)
+        if year == visit_year and month == visit_month:
+            if "bcg" in str(child[6]):
+                bcg_report["month"]+=1
+                bcg_report["year"]+=1
+            if "opv" in str(child[6]):
+                opv_report["month"]+=1
+                opv_report["year"]+=1
+            if "pentavalent" in str(child[6]):
+                pentavalent_report["month"]+=1
+                pentavalent_report["year"]+=1
+            if "diarrhea" in str(child[6]):
+                diarrhea_report["month"]+=1
+                diarrhea_report["year"]+=1
+            if "BF" in str(child[6]):
+                bf_report["month"]+=1
+                bf_report["year"]+=1
+            if "hep" in str(child[6]):
+                hep_report["month"]+=1
+                hep_report["year"]+=1
+            if "child_oa" in str(child[5]):
+                child_oa_report["month"]+=1
+                child_oa_report["year"]+=1
+            if int(child[-4])>settings.CHILD_BIRTH_WEIGHT_IN_KGS:
+                low_weight_report["month"]+=1
+                low_weight_report["year"]+=1
+            if int(child[-4])>0:
+                weighed_report["month"]+=1
+                weighed_report["year"]+=1
+            if year == dob_year and month == dob_month:
+                infant_balance_report["month"]+=1
+                infant_balance_report["year"]+=1
+            if age_in_days > 0 and age_in_days < 366:
+                age_1_report["month"]+=1
+                age_1_report["year"]+=1
+            if age_in_days > 0 and age_in_days < 1826:
+                age_5_report["month"]+=1
+                age_5_report["year"]+=1
+        elif year == visit_year:
+            if "bcg" in str(child[6]):
+                bcg_report["year"]+=1
+            if "opv" in str(child[6]):
+                opv_report["year"]+=1
+            if "pentavalent" in str(child[6]):
+                pentavalent_report["year"]+=1
+            if "diarrhea" in str(child[6]):
+                diarrhea_report["year"]+=1
+            if "BF" in str(child[6]):
+                bf_report["year"]+=1
+            if "hep" in str(child[6]):
+                hep_report["year"]+=1
+            if int(child[-4])>settings.CHILD_BIRTH_WEIGHT_IN_KGS:
+                low_weight_report["year"]+=1
+            if int(child[-4])==0:
+                weighed_report["year"]+=1
+            if year == dob_year and month == dob_month:
+                infant_balance_report["year"]+=1
+            if "child_oa" in str(child[5]):
+                child_oa_report["year"]+=1
+            if age_in_days > 0 and age_in_days < 366:
+                age_1_report["year"]+=1
+            if age_in_days > 0 and age_in_days < 1826:
+                age_5_report["year"]+=1
+
+    child_report.append(bcg_report)
+    child_report.append(opv_report)
+    child_report.append(pentavalent_report)
+    child_report.append(age_1_report)
+    child_report.append(age_5_report)
+    child_report.append(diarrhea_report)
+    child_report.append(bf_report)
+    child_report.append(hep_report)
+    child_report.append(infant_balance_report)
+    child_report.append(child_oa_report)
+    child_report.append(low_weight_report)
+    child_report.append(weighed_report)
+    return child_report
+
+def fpreport(anmid):
+    cur = connection.cursor()
+    query = "SELECT * FROM app_reporting WHERE activity = 'FP' and anm_id = '%s';" %anmid
+    cur.execute(str(query))
+    fp_details = cur.fetchall()
+    condom_report={"name":"Condom usage","month":0,"year":0,"annual_target":0,"percentage":0}
+    condom_pieces_report={"name":"Condom pieces","month":0,"year":0,"annual_target":0,"percentage":0}
+    iud_report={"name":"IUD Adoption","month":0,"year":0,"annual_target":0,"percentage":0}
+    oral_pills_report={"name":"Oral Pills","month":0,"year":0,"annual_target":0,"percentage":0}
+    current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
+    month = current_date.split("-")[1]
+    year = current_date.split("-")[0]
+    for fp in fp_details:
+        fp_date = fp[8]
+        fp_month = fp_date.split("-")[1]
+        fp_year = fp_date.split("-")[0]
+        if fp_year == year and fp_month ==month :
+            if str(fp[6])=="condom":
+                condom_report["month"]+=1
+                condom_pieces_report["month"]+=int(fp[7])
+            elif str(fp[6]) == "iud":
+                iud_report["month"]+=1
+            elif str(fp[6]) == "ecp":
+                oral_pills_report["month"]+=int(fp[7])
+        if fp_year == year:
+            if str(fp[6])=="condom":
+                condom_report["year"]+=1
+                condom_pieces_report["year"]+=int(fp[7])
+            elif str(fp[6]) == "iud":
+                iud_report["year"]+=1
+            elif str(fp[6]) == "ecp":
+                oral_pills_report["year"]+=int(fp[7])
+    fpresult=[]
+    fpresult.append(condom_report)
+    fpresult.append(condom_pieces_report)
+    fpresult.append(iud_report)
+    fpresult.append(oral_pills_report)
+    return fpresult
+
+def deliveryreport(anmid):
+    cur = connection.cursor()
+    query = "SELECT * FROM app_reporting WHERE activity = 'pnc' and anm_id = '%s';" %anmid
+    cur.execute(str(query))
+    pnc_details = cur.fetchall()
+    pnc_report,pnc_report1,pnc_report2,pnc_report3,pnc_report4={},{},{},{},{}
+    cesarean_report={"name":"Cesareans","month":0,"year":0,"annual_target":0,"percentage":0}
+    cesarean_gov_report={"name":"Cesareans Government Hospital","month":0,"year":0,"annual_target":0,"percentage":0}
+    dhc_report={"name":"Number of deliveries conducted at District Hospital","month":0,"year":0,"annual_target":0,"percentage":0}
+    chc_report={"name":"Number of deliveries conducted at Community Health Center","month":0,"year":0,"annual_target":0,"percentage":0}
+    pnc_total_report={"name":"Total Deliveries","month":0,"year":0,"annual_target":0,"percentage":0}
+    current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
+    month = current_date.split("-")[1]
+    year = current_date.split("-")[0]
+    for pnc in pnc_details:
+        print pnc
+        pnc_date = pnc[-1]
+        print pnc_date
+        pnc_month = pnc_date.split("-")[1]
+        pnc_year = pnc_date.split("-")[0]
+        if pnc_year == year and pnc_month ==month :
+            if str(pnc[6])=="cesarean":
+                cesarean_report["month"]+=1
+            if str(pnc[-1]) not in ["home","private"] and str(pnc[6])=="cesarean":
+                cesarean_gov_report["month"]+=1
+            if str(pnc[-1])=='dh':
+                dhc_report["month"]+=1
+            if str(pnc[-1])=='chc':
+                chc_report["month"]+=1
+            pnc_total_report["month"]+=1
+        if pnc_year == year:
+            print type(str(pnc[-1])),str(pnc[-1])
+            if str(pnc[6])=="cesarean":
+                cesarean_report["year"]+=1
+            if str(pnc[-1]) not in ["home","private"] and str(pnc[6])=="cesarean":
+                cesarean_gov_report["year"]+=1
+            if str(pnc[-1])=='dh':
+                dhc_report["year"]+=1
+            if str(pnc[-1])=='chc':
+                chc_report["year"]+=1
+            pnc_total_report["year"]+=1
+    pncresult=[]
+    pncresult.append(cesarean_report)
+    pncresult.append(cesarean_gov_report)
+    pncresult.append(dhc_report)
+    pncresult.append(chc_report)
+    pncresult.append(pnc_total_report)
+    return pncresult
+
+def anc_report(anmid):
+    cur = connection.cursor()
+    query = "SELECT * FROM app_reporting WHERE activity IN ('anc','tt1','tt2','ttbooster') and anm_id = '%s';" %anmid
+    cur.execute(str(query))
+    anc_details = cur.fetchall()
+    anc_late_reg_report={"name":"Late ANC Registration","month":0,"year":0,"annual_target":0,"percentage":0}
+    anc_early_reg_report={"name":"Early ANC Registration","month":0,"year":0,"annual_target":0,"percentage":0}
+    tt2_report={"name":"TT2 and TT Booster(Pregnant women)","month":0,"year":0,"annual_target":0,"percentage":0}
+    tt1_report={"name":"TT1","month":0,"year":0,"annual_target":0,"percentage":0}
+    for anc in anc_details:
+        anc_date = anc[8]
+        if anc[5] == "anc":
+            current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
+            month = current_date.split("-")[1]
+            year = current_date.split("-")[0]
+            anc_month = anc_date.split("-")[1]
+            anc_year = anc_date.split("-")[0]
+            anc_reg_days = abs(( datetime.strptime(str(current_date),'%Y-%m-%d') - datetime.strptime(str(anc_date),'%Y-%m-%d')).days)
+            if anc_reg_days > 90:
+                if anc_year == year and anc_month ==month:
+                    anc_late_reg_report["month"] +=1
+                if anc_year == year:
+                    anc_late_reg_report["year"] +=1
+            elif anc_reg_days <= 90:
+                if anc_year == year and anc_month ==month:
+                    anc_early_reg_report["month"] +=1
+                if anc_year == year:
+                    anc_early_reg_report["year"] +=1
+        elif anc[5] == "tt2" or anc[5]== "ttbooster":
+            print anc[5],"anc5"
+            if anc_year == year and anc_month ==month:
+                tt2_report["month"] +=1
+            if anc_year == year:
+                tt2_report["year"] +=1
+        elif anc[5] == "tt1":
+            if anc_year == year and anc_month ==month:
+                tt1_report["month"] +=1
+            if anc_year == year:
+                tt1_report["year"] +=1
+    ancresult=[]
+    ancresult.append(anc_late_reg_report)
+    ancresult.append(anc_early_reg_report)
+    ancresult.append(tt2_report)
+    ancresult.append(tt1_report)
+    return ancresult
