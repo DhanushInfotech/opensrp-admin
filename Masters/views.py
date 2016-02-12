@@ -168,6 +168,7 @@ def docinfo(request):
                 continue
     	entity_detail_id=str(entity[1])
         ancvisit_detail="curl -s -H -X GET http://"+settings.COUCHDB+"/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(entity[0])+"%22&descending=true"
+        print ancvisit_detail
         visit_output = commands.getoutput(ancvisit_detail)
         visit_data1 = json.loads(visit_output)
         row = visit_data1['rows']
@@ -189,10 +190,12 @@ def docinfo(request):
             #-----------------PNC DATA --------------
             if row[-1]['value'][0] == 'pnc_visit' or row[-1]['value'][0] == 'pnc_visit_edit':
                 doc_id=row[-1]['id']
+                anmId=row[-1]["value"][2]
                 for visitdata in row:
                     pnc_tags = ["pncNumber","pncVisitDate","difficulties1","difficulties2","abdominalProblems","urineStoolProblems",
                                 "hasFeverSymptoms","breastProblems","vaginalProblems","bpSystolic","bpDiastolic","temperature","pulseRate",
-                                "bloodGlucoseData","weight","anmPoc","pncVisitPlace","pncVisitDate","isHighRisk","hbLevel","pstechoscopeData"]
+                                "bloodGlucoseData","weight","anmPoc","pncVisitPlace","pncVisitDate","isHighRisk","hbLevel",
+                                "pstechoscopeData"]
                     f = lambda x: x[0].get("value") if len(x)>0 else ""
                     fetched_dict = copyf(visitdata["value"][1]["form"]["fields"],"name",pnc_tags)
                     visit["pncNumber"]=f(copyf(fetched_dict,"name","pncNumber"))
@@ -223,6 +226,7 @@ def docinfo(request):
 
             elif row[-1]['value'][0] == 'anc_visit' or row[-1]['value'][0] == 'anc_visit_edit':
                 doc_id=row[-1]['id']
+                anmId=row[-1]["value"][2]
                 for visitdata in row:
                     anc_tags = ["ancVisitNumber","ancNumber","ancVisitPerson","ancVisitDate","riskObservedDuringANC","bpSystolic","bpDiastolic",
                                 "temperature","pulseRate","bloodGlucoseData","weight","anmPoc","isHighRisk","fetalData","pstechoscopeData"]
@@ -253,6 +257,7 @@ def docinfo(request):
                 visit_data.append(visit)
             elif row[-1]['value'][0] == 'child_illness' or row[-1]['value'][0] == 'child_illness_edit':
                 doc_id=row[-1]['id']
+                anmId=row[-1]["value"][2]
                 for childdata in row:
                     child_tags = ["dateOfBirth","childSigns","childSignsOther","immediateReferral","immediateReferralReason","reportChildDiseaseDate","reportChildDisease","reportChildDiseaseOther"
                                 ,"reportChildDiseasePlace","childTemperature","numberOfORSGiven","childReferral","anmPoc","isHighRisk","submissionDate","id","numberOfDaysCough","breathsPerMinute","daysOfDiarrhea","bloodInStool","vommitEveryThing","daysOfFever","sickVisitDate"]
@@ -370,7 +375,7 @@ def docinfo(request):
                     temp_list.append(visit_data[-1])
                     result["riskinfo"]=temp_list
                     result["entityidec"] = entity_detail_id
-                    result["anmId"] = row1[0]['value'][2]
+                    result["anmId"] = anmId
                     if str(entity[2]) == "None":
                         result["pending"]=""
                     else:
@@ -1628,9 +1633,18 @@ def mortalityreport(anmid):
     current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
     month = current_date.split("-")[1]
     year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target_mortality = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target_mortality))
+    mortality_annual_target = cur.fetchall()
+    mortality_annual_target=dict(mortality_annual_target)
     total_mortality_report={"name":"Total Mother Mortality","month":0,"year":0,"annual_target":0,"percentage":0}
     mother_mortality_anc_report={"name":"Mother mortality(during ANC)","month":0,"year":0,"annual_target":0,"percentage":0}
     mother_mortality_delivery_report={"name":"Mother mortality(during Delivery)","month":0,"year":0,"annual_target":0,"percentage":0}
+    # my_dict.setdefault("b",0)
+    total_mortality_report["annual_target"]=mortality_annual_target.setdefault("total_mother_mortality",1000)
+    mother_mortality_delivery_report["annual_target"] = mortality_annual_target.setdefault("anctopnc_MaternalDeath",1000)
+    mother_mortality_anc_report["annual_target"] = mortality_annual_target.setdefault("anc_MaternalDeath",1000)
     mortality_report=[]
     for mortality in mortality_details:
         visit_date = mortality[-6]
@@ -1673,6 +1687,12 @@ def childreport(anmid):
     current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
     month = current_date.split("-")[1]
     year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target_child = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target_child))
+    child_annual_target = cur.fetchall()
+    child_annual_target=dict(child_annual_target)
+    print child_annual_target
     bcg_report={"name":"BCG","month":0,"year":0,"annual_target":0,"percentage":0}
     opv_report={"name":"OPV","month":0,"year":0,"annual_target":0,"percentage":0}
     pentavalent_report={"name":"PENTAVALENT 1","month":0,"year":0,"annual_target":0,"percentage":0}
@@ -1686,6 +1706,18 @@ def childreport(anmid):
     low_weight_report={"name":"Low birth weight","month":0,"year":0,"annual_target":0,"percentage":0}
     weighed_report={"name":"Number of infants weighed at birth","month":0,"year":0,"annual_target":0,"percentage":0}
     child_report=[]
+    bcg_report["annual_target"]=child_annual_target.setdefault("bcg",1000)
+    opv_report["annual_target"]=child_annual_target.setdefault("opv",1000)
+    pentavalent_report["annual_target"]=child_annual_target.setdefault("pentavalent",1000)
+    age_1_report["annual_target"]=child_annual_target.setdefault("child_0_1",1000)
+    age_5_report["annual_target"]=child_annual_target.setdefault("child_0_5",1000)
+    diarrhea_report["annual_target"]=child_annual_target.setdefault("diarrhea",1000)
+    bf_report["annual_target"]=child_annual_target.setdefault("bf",1000)
+    hep_report["annual_target"]=child_annual_target.setdefault("hep",1000)
+    infant_balance_report["annual_target"]=child_annual_target.setdefault("infant_balance",1000)
+    child_oa_report["annual_target"]=child_annual_target.setdefault("infant_balance_oa",1000)
+    low_weight_report["annual_target"]=child_annual_target.setdefault("low_birth_weight",1000)
+    weighed_report["annual_target"]=child_annual_target.setdefault("child_weighed",1000)
     for child in child_details:
         visit_date = child[-6]
         visit_month = visit_date.split("-")[1]
@@ -1783,6 +1815,15 @@ def fpreport(anmid):
     current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
     month = current_date.split("-")[1]
     year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target))
+    fp_annual_target = cur.fetchall()
+    fp_annual_target=dict(fp_annual_target)
+    condom_report["annual_target"]= fp_annual_target.setdefault("condom_usage",1000)
+    condom_pieces_report["annual_target"]= fp_annual_target.setdefault("condom_pieces",1000)
+    iud_report["annual_target"]= fp_annual_target.setdefault("iud_adoption",1000)
+    oral_pills_report["annual_target"]= fp_annual_target.setdefault("oral_pills",1000)
     for fp in fp_details:
         fp_date = fp[8]
         fp_month = fp_date.split("-")[1]
@@ -1824,10 +1865,18 @@ def deliveryreport(anmid):
     current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
     month = current_date.split("-")[1]
     year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target_delivery = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target_delivery))
+    delivery_annual_target = cur.fetchall()
+    delivery_annual_target=dict(delivery_annual_target)
+    cesarean_report["annual_target"]=delivery_annual_target.setdefault("cesareans",1000)
+    cesarean_gov_report["annual_target"]=delivery_annual_target.setdefault("cesareans_gh",1000)
+    dhc_report["annual_target"]=delivery_annual_target.setdefault("dh",1000)
+    chc_report["annual_target"]=delivery_annual_target.setdefault("chc",1000)
+    pnc_total_report["annual_target"]=delivery_annual_target.setdefault("total_deliveries",1000)
     for pnc in pnc_details:
-        print pnc
         pnc_date = pnc[-1]
-        print pnc_date
         pnc_month = pnc_date.split("-")[1]
         pnc_year = pnc_date.split("-")[0]
         if pnc_year == year and pnc_month ==month :
@@ -1868,6 +1917,18 @@ def anc_report(anmid):
     anc_early_reg_report={"name":"Early ANC Registration","month":0,"year":0,"annual_target":0,"percentage":0}
     tt2_report={"name":"TT2 and TT Booster(Pregnant women)","month":0,"year":0,"annual_target":0,"percentage":0}
     tt1_report={"name":"TT1","month":0,"year":0,"annual_target":0,"percentage":0}
+    current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
+    month = current_date.split("-")[1]
+    year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target_anc = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target_anc))
+    anc_annual_target = cur.fetchall()
+    anc_annual_target=dict(anc_annual_target)
+    anc_late_reg_report["annual_target"]=anc_annual_target.setdefault("late_anc_registrations",1000)
+    anc_early_reg_report["annual_target"]=anc_annual_target.setdefault("early_anc_registrations",1000)
+    tt2_report["annual_target"]=anc_annual_target.setdefault("tt2_booster",1000)
+    tt1_report["annual_target"]=anc_annual_target.setdefault("tt1",1000)
     for anc in anc_details:
         anc_date = anc[8]
         if anc[5] == "anc":

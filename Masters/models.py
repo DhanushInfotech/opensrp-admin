@@ -48,6 +48,7 @@ class DrugInfo(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+
         db_table = 'drug_info'
         verbose_name_plural="DRUG INFO"
         verbose_name='DRUG INFO'
@@ -62,6 +63,7 @@ class Frequency(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+
         db_table = 'frequency'
         verbose_name_plural="FREQUENCIES"
 	verbose_name='FREQUENCY'
@@ -75,6 +77,7 @@ class Dosage(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+
         db_table = 'dosage'
         verbose_name_plural="DOSAGE"
 	verbose_name='DOSAGE'
@@ -87,6 +90,7 @@ class Directions(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+
         db_table = 'directions'
         verbose_name_plural = "DIRECTION"
 	verbose_name='DIRECTION'
@@ -104,6 +108,7 @@ class Investigations(models.Model):
     is_active = models.BooleanField(default=True)
 
     class Meta:
+
         db_table = 'investigation'
         verbose_name_plural = "INVESTIGATIONS"
 	verbose_name='INVESTIGATION'
@@ -142,6 +147,7 @@ class ICD10(models.Model):
     status = models.BooleanField(default= True) 
 
     class Meta:
+
         db_table = 'icd10'
         verbose_name_plural="ICD10 CODES"
 	verbose_name='ICD10 CODE'
@@ -164,7 +170,7 @@ class PocInfo(models.Model):
     wifename = models.CharField(max_length=200, blank=True)
 
     class Meta:
-        #managed = False
+
         db_table = 'poc_table'
         verbose_name_plural="POC INFO"
 	verbose_name='POC INFO'
@@ -184,7 +190,7 @@ class PocBackup(models.Model):
     docid = models.CharField(max_length=100, blank=True)
     poc = models.CharField(max_length=1000, blank=True)
     class Meta:
-        #managed = False
+
         db_table = 'poc_backup'
 
 class UserMasters(models.Model):
@@ -212,8 +218,9 @@ class UserMasters(models.Model):
         verbose_name="USERS"
         db_table = 'user_masters_new'
 
+
     def __unicode__(self):
-        return self.user_id
+        return str(self.user_id)
     
 
 @receiver(post_save, sender=UserMasters)
@@ -244,6 +251,7 @@ class CountryTb(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+
         verbose_name_plural="COUNTRY"
         db_table = 'country_tb'
         verbose_name="COUNTRY"
@@ -258,6 +266,7 @@ class CountyTb(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+
         verbose_name_plural="COUNTY"
         db_table = 'county_tb'
         verbose_name="COUNTY"
@@ -272,7 +281,7 @@ class Disttab(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
-        #managed = False
+
         verbose_name_plural="DISTRICT"
         verbose_name="DISTRICT"
         #db_table = 'district_tb'
@@ -290,6 +299,7 @@ class SubdistrictTab(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+
         verbose_name_plural="SUBDISTRICT"
         verbose_name="SUBDISTRICT"
         #db_table = 'subdistrict_tab'
@@ -308,6 +318,7 @@ class LocationTab(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+
         verbose_name_plural="LOCATIONS"
         verbose_name="LOCATIONS"
         #db_table = 'location_tab'
@@ -331,6 +342,7 @@ class HealthCenters(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+
         #db_table = 'health_centers'
         verbose_name_plural="HEALTH CENTERS"
         verbose_name="HEALTH CENTERS"
@@ -358,7 +370,7 @@ class AppConfiguration(models.Model):
     #configuration = models.TextField(max_length=480)
 
     class Meta:
-        #managed = False
+
         db_table = 'app_configuration'
         verbose_name_plural="APP CONFIGURATION"
         verbose_name="APP CONFIGURATION"
@@ -379,6 +391,7 @@ class AncDue(models.Model):
     anmid = models.CharField(max_length=200, blank=True)
 
     class Meta:
+
         db_table = 'anc_due'
 
 class FormFields(models.Model):
@@ -397,7 +410,7 @@ class FormFields(models.Model):
     field5 = models.CharField(max_length=50, blank=True)
 
     class Meta:
-        #managed = False
+
         unique_together = ("country", "form_name",)
         db_table = "form_fields"
         verbose_name_plural="FORM FIELDS"
@@ -418,7 +431,7 @@ class VisitConfiguration(models.Model):
     anc_visit4_from_week = models.IntegerField(blank=True, null=True)
     anc_visit4_to_week = models.IntegerField(blank=True, null=True)
     class Meta:
-        #managed = False
+
         db_table = 'visit_configuration'
         verbose_name_plural="VISIT CONFIGURATION"
         verbose_name="VISIT CONFIGURATION"
@@ -439,33 +452,19 @@ class AppReporting(models.Model):
     dob = models.CharField(max_length=200, blank=True, null=True)
 
     class Meta:
-        #managed = False
+
         db_table = 'app_reporting'
 
 
 class AnnualTarget(models.Model):
-    service_provider = models.ForeignKey('UserMasters', db_column='service_provider')
-    indicator = models.ForeignKey('DimIndicator', db_column='indicator')
-    target = models.CharField(max_length=20)
-    start_date = models.DateField()
-    end_date = models.DateField()
+    YEARS = ((y,y) for y in range(2016,2100))
+    anm = models.ForeignKey('UserMasters', db_column='anm', blank=True, null=True)
+    indicators = models.CharField(max_length=25, blank=True, null=True,choices=settings.INDICATORS)
+    target = models.IntegerField()
+    year = models.IntegerField(blank=True, null=True, choices=YEARS)
 
     class Meta:
-        #managed = False
+
         db_table = 'annual_target'
         verbose_name_plural="ANNUAL TARGET"
         verbose_name="ANNUAL TARGET"
-
-    def __unicode__(self):
-        return self.service_provider
-
-
-class DimIndicator(models.Model):
-    indicator = models.CharField(unique=True, max_length=100)
-
-    class Meta:
-        #managed = False
-        db_table = 'dim_indicator'
-    
-    def __unicode__(self):
-        return self.indicator

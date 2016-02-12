@@ -36,6 +36,4 @@ urlpatterns = patterns('',
     url(r'^sendsms/$', 'Masters.views.sendsms',name='send_sms'),
     url(r'^docoverview/$', 'Masters.views.docoverview',name='doctor_overview'),
     url(r'^reporting/$', 'Masters.views.app_report',name='app_report'),
-    url(r'^redisdb/$', 'Masters.views.redis_report',name='redis_report'),
-    url(r'^redisreport/$', 'Masters.views.report_redis',name='report_redis'),
 )
