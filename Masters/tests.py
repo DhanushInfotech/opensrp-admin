@@ -243,11 +243,6 @@ class UserMastersTestCase(TestCase):
     def test_usermasters(self):
         users = UserMasters.objects.create(user_role="ANM",user_id="anm",name="sudheer",password="sudheer",confirm_password="sudheer",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",subcenter=self.subcenter,villages="YPL",lastname="sandi",hospital=self.hospital,county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
         self.assertEqual(users.user_role,'ANM')
-    def test_annual_target(self):
-        users = UserMasters.objects.create(user_role="ANM",user_id="TestAnm123",name="sudheer",password="sudheer",confirm_password="sudheer",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",subcenter=self.subcenter,villages="YPL",
-                                           lastname="sandi",hospital=self.hospital,county=self.county,country=self.country,
-                                           district=self.district,subdistrict=self.subdistrict)
-        AnnualTarget.obj
 
     def test_app_reporting(self):
         visitentityid = "0663b5b4-49a5-4e48-bece-f88094a44c52"
