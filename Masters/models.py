@@ -458,7 +458,7 @@ class AppReporting(models.Model):
 
 class AnnualTarget(models.Model):
     YEARS = ((y,y) for y in range(2016,2100))
-    anm = models.ForeignKey('UserMasters', db_column='anm', blank=True, null=True)
+    anm = models.ForeignKey('UserMasters', db_column='anm', blank=True, null=True, limit_choices_to={"user_role":"ANM"})
     indicators = models.CharField(max_length=25, blank=True, null=True,choices=settings.INDICATORS)
     target = models.IntegerField()
     year = models.IntegerField(blank=True, null=True, choices=YEARS)
