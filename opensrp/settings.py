@@ -35,7 +35,7 @@ DATABASES = {
         'NAME': 'drishti',
         'USER': 'dhanush',
         'PASSWORD': 'dhanush',
-        'HOST': '202.153.34.169',
+        'HOST': 'localhost',
         'PORT': '5432',
         'OPTIONS': {
            'options': '-c search_path=report'
@@ -142,7 +142,35 @@ DISEASES = ('Pallor',
 'Vomiting')
 
 
-PHONE_NUMBER_LENGTH = 10
+INDICATORS=(("condom_usage","CONDOM USEAGE"),
+            ("condom_pieces","CONDOM PIECES"),
+            ("iud_adoption","IUD ADOPTION"),
+            ("oral_pills","ORAL PILLS"),
+            ("total_anc_registrations","Total ANC registrations"),
+            ("late_anc_registrations","Late ANC registrations"),
+            ("early_anc_registrations","Early ANC registrations"),
+            ("tt2_booster","TT2/TT Booster"),
+            ("tt1","TT1"),
+            ("cesareans","Cesareans"),
+            ("cesareans_gh","Cesareans Govt. hospital"),
+            ("total_deliveries","Total Deliveries"),
+            ("chc","Deliveries at Community Health center"),
+            ("dh","Deliveries at District Health center "),
+            ("bcg","BCG"),
+            ("bf","BF with in 1hr of birth"),
+            ("diarrhea","DIARRHEA"),
+            ("hep","HEP"),
+            ("infant_balance","INFANT BALANCE"),
+            ("infant_balance_oa","INFANT BALANCE OA"),
+            ("low_birth_weight","CHILD WITH LOW BIRTH WEIGHT"),
+            ("child_weighed","CHILD_WEIGHED"),
+            ("pentavalent","PENTAVALENT"),
+            ("opv","OPV"),
+            ("child_0_1","No. of children 0-1 years"),
+            ("child_0_5","No. of children 0-5 years"),
+            ("total_mother_mortality","TOTAL MOTHER MORTALITY"),
+            ("anc_MaternalDeath","MOTHER MORTALITY (DURING ANC)"),
+            ("anctopnc_MaternalDeath","MOTHER MORTALITY (DURING DELIVERY)"))
 
 OPV1_PENTAVALENT1_DAYS=41
 OPV2_PENTAVALENT2_DAYS=69
@@ -152,6 +180,9 @@ MMR_DAYS=364
 MEASLES2_DPTBOOSTER1_DAYS=539
 OPVBOOSTER_DAYS=1439
 DPTBOOSTER2_DAYS=1799
+
+COUCHDB="202.153.34.169:5984"
+RAPIDPROIP="202.153.34.174"
 
 CHILD_BIRTH_WEIGHT_IN_KGS = 4
 

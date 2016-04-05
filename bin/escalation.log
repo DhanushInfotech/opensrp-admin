@@ -1,72 +1,9 @@
-hi
-[(u'5', u'hospitalcountry', None, u'78c36764-f28a-40db-ac24-b0923f036d4a', u'cceb2889-5898-4ede-835f-5bceadd27335'), (u'5', u'hospitalcountry', None, u'3eed391a-ee2d-4cca-b313-67967d0f74e1', u'b65ae35d-4c86-46a9-b5af-58d99ab57bd9'), (u'5', u'hospitalcountry', None, u'e7079dd3-53bd-45aa-9397-9724d40c51e4', u'13a78764-eddf-4e09-8845-fb6ac548881b'), (u'5', u'hospitalcountry', None, u'e8ed7f10-e291-4e36-9a13-9855d6e22095', u'161d5224-d4e3-4a1f-915f-0baa96084eb5'), (u'5', u'hospitalcountry', None, u'e8ed7f10-e291-4e36-9a13-9855d6e22095', u'161d5224-d4e3-4a1f-915f-0baa96084eb5'), (u'5', u'hospitalcountry', None, u'03ef1fab-f643-448c-b92f-7dcbc45aaf05', u'862ae1ec-8d9b-4e1d-9609-663bd6683811'), (u'5', u'hospitalcountry', None, u'e9ac8c0f-e1f6-407d-bd4d-8a89a81b8581', u'c11b2d5f-630f-464d-bdf1-685843e3aa12'), (u'5', u'hospitalcountry', None, u'b245b456-8d0d-4365-9d96-5701a43ed571', u'586c5f60-e75a-4c1b-bffd-d419a0c27af5'), (u'5', u'hospitalcountry', None, u'b245b456-8d0d-4365-9d96-5701a43ed571', u'586c5f60-e75a-4c1b-bffd-d419a0c27af5'), (u'5', u'hospitalcountry', None, u'f3ef2136-5bcc-4bad-8f9c-ef09855a4561', u'680e978e-d65b-4565-8da3-1be3ceed0020'), (u'5', u'hospitalcountry', None, u'9bed7ff0-cd9a-490d-b066-29e08ae3aef4', u'59a7965e-d815-437d-8d68-d3484433b27d'), (u'5', u'hospitalcountry', None, u'a99d7ffb-5acb-4847-b8b0-a8a3decc3982', u'45aceb18-5c7e-45fc-8707-1eecdf25cda9'), (u'5', u'hospitalcountry', None, u'402bb19d-cd03-4804-8ea0-d6cf506968ca', u'9798501f-b616-4321-b513-a959125dc654'), (u'5', u'hospitalcountry', None, u'89610bda-fd8c-4605-beb3-85abd2bd0d79', u'bfbc976a-23cd-4e1b-a1bc-6dcd890c2741'), (u'5', u'hospitalcountry', None, u'89610bda-fd8c-4605-beb3-85abd2bd0d79', u'bfbc976a-23cd-4e1b-a1bc-6dcd890c2741'), (u'5', u'hospitalcountry', None, u'b9081733-3e19-457c-908f-a0417917e4da', u'662138f0-1b07-483c-b66d-c8b22829f63e'), (u'5', u'hospitalcountry', None, u'4343c0d8-9f64-4e4f-8bb8-d75805582787', u'88818f0a-2de9-49d6-b7d6-4f8d4713d708'), (u'5', u'hospitalcountry', None, u'b9081733-3e19-457c-908f-a0417917e4da', u'662138f0-1b07-483c-b66d-c8b22829f63e'), (u'5', u'hospitalcountry', None, u'4343c0d8-9f64-4e4f-8bb8-d75805582787', u'88818f0a-2de9-49d6-b7d6-4f8d4713d708'), (u'5', u'hospitalcountry', None, u'b9081733-3e19-457c-908f-a0417917e4da', u'662138f0-1b07-483c-b66d-c8b22829f63e'), (u'5', u'hospitalcountry', None, u'b9081733-3e19-457c-908f-a0417917e4da', u'662138f0-1b07-483c-b66d-c8b22829f63e'), (u'5', u'hospitalcountry', None, u'b9081733-3e19-457c-908f-a0417917e4da', u'662138f0-1b07-483c-b66d-c8b22829f63e'), (u'5', u'hospitalcountry', None, u'e9ac8c0f-e1f6-407d-bd4d-8a89a81b8581', u'c11b2d5f-630f-464d-bdf1-685843e3aa12'), (u'5', u'hospitalcountry', None, u'e9ac8c0f-e1f6-407d-bd4d-8a89a81b8581', u'c11b2d5f-630f-464d-bdf1-685843e3aa12'), (u'5', u'hospitalcountry', None, u'3c23b976-20f2-44d3-b21a-2c07e016e8e8', u'59a10aaf-e1ef-4b10-85a9-726b4f464a45'), (u'5', u'hospitalcountry', None, u'3eed391a-ee2d-4cca-b313-67967d0f74e1', u'b65ae35d-4c86-46a9-b5af-58d99ab57bd9'), (u'5', u'hospitalcountry', None, u'b9081733-3e19-457c-908f-a0417917e4da', u'662138f0-1b07-483c-b66d-c8b22829f63e'), (u'5', u'pakistan country Hospital', None, u'07aef111-24c2-4ad1-8225-429255d5058d', u'1250d023-c833-4011-a87f-7e5a527d5fc0'), (u'5', u'hospitalcountry', None, u'89610bda-fd8c-4605-beb3-85abd2bd0d79', u'bfbc976a-23cd-4e1b-a1bc-6dcd890c2741'), (u'5', u'hospitalcountry', None, u'e66874eb-d41f-4659-a35d-f6ce6a718175', u'da71f71b-69d5-4109-a108-738f22b1173e'), (u'5', u'sanjos', None, u'5bfcfdcc-3097-4054-ad6c-859fbdee6ff8', u'69fb053f-3616-4495-8d6c-6f44250620d5'), (u'5', u'hospitalcountry', None, u'68c716ed-3cbc-4e78-9270-992677ac74a1', u'8a4b599e-9d17-4698-b892-10005bfbc727'), (u'5', u'hospitalcountry', None, u'f3ef2136-5bcc-4bad-8f9c-ef09855a4561', u'680e978e-d65b-4565-8da3-1be3ceed0020'), (u'5', u'hospitalcountry', None, u'a9729cb6-900a-4b3c-b772-aa9fe3fd8d97', u'ab51a800-2756-42d1-9bd1-d669fcfe7fa2'), (u'5', u'hospitalcountry', None, u'03ef1fab-f643-448c-b92f-7dcbc45aaf05', u'862ae1ec-8d9b-4e1d-9609-663bd6683811')]
-5 None hospitalcountry
-2015-09-03 12:52:01.449939
-5 None hospitalcountry
-2015-09-03 12:52:01.450011
-5 None hospitalcountry
-2015-09-03 12:52:01.450023
-5 None hospitalcountry
-2015-09-03 12:52:01.450033
-5 None hospitalcountry
-2015-09-03 12:52:01.450041
-5 None hospitalcountry
-2015-09-03 12:52:01.450050
-5 None hospitalcountry
-2015-09-03 12:52:01.450058
-5 None hospitalcountry
-2015-09-03 12:52:01.450066
-5 None hospitalcountry
-2015-09-03 12:52:01.450074
-5 None hospitalcountry
-2015-09-03 12:52:01.450082
-5 None hospitalcountry
-2015-09-03 12:52:01.450090
-5 None hospitalcountry
-2015-09-03 12:52:01.450098
-5 None hospitalcountry
-2015-09-03 12:52:01.450106
-5 None hospitalcountry
-2015-09-03 12:52:01.450114
-5 None hospitalcountry
-2015-09-03 12:52:01.450122
-5 None hospitalcountry
-2015-09-03 12:52:01.450130
-5 None hospitalcountry
-2015-09-03 12:52:01.450138
-5 None hospitalcountry
-2015-09-03 12:52:01.450146
-5 None hospitalcountry
-2015-09-03 12:52:01.450154
-5 None hospitalcountry
-2015-09-03 12:52:01.450162
-5 None hospitalcountry
-2015-09-03 12:52:01.450170
-5 None hospitalcountry
-2015-09-03 12:52:01.450178
-5 None hospitalcountry
-2015-09-03 12:52:01.450186
-5 None hospitalcountry
-2015-09-03 12:52:01.450194
-5 None hospitalcountry
-2015-09-03 12:52:01.450201
-5 None hospitalcountry
-2015-09-03 12:52:01.450209
-5 None hospitalcountry
-2015-09-03 12:52:01.450217
-5 None pakistan country Hospital
-2015-09-03 12:52:01.450225
-5 None hospitalcountry
-2015-09-03 12:52:01.450233
-5 None hospitalcountry
-2015-09-03 12:52:01.450241
-5 None sanjos
-2015-09-03 12:52:01.450249
-5 None hospitalcountry
-2015-09-03 12:52:01.450273
-5 None hospitalcountry
-2015-09-03 12:52:01.450281
-5 None hospitalcountry
-2015-09-03 12:52:01.450290
-5 None hospitalcountry
-2015-09-03 12:52:01.450298
+12000 minutes
+[(u'3', u'Changa', u'', u'9f18f6ed-c07c-48c0-ae2d-c506aa8f01fc', u'f7b9363c-72ba-4f87-b96c-c5bdbd0051cd', u'Wesley'), (u'2', u'Gandhi Medical Centre', u' ', u'390da71c-2e65-40eb-9fb5-f979834c8b79', u'42211047-acf6-4f66-8664-4163449a3081', u'Tiya'), (u'2', u'Chamba', u' ', u'7fb9d989-3943-491a-9811-148e82e032f5', u'602c8cb7-4ebc-4f11-8039-fb365feb36b7', u'Mom')] poc details
+if
+(u'3', u'Changa', u'', u'9f18f6ed-c07c-48c0-ae2d-c506aa8f01fc', u'f7b9363c-72ba-4f87-b96c-c5bdbd0051cd', u'Wesley') single poc
+Wesley 
+(u'2', u'Gandhi Medical Centre', u' ', u'390da71c-2e65-40eb-9fb5-f979834c8b79', u'42211047-acf6-4f66-8664-4163449a3081', u'Tiya') single poc
+Tiya  
+(u'2', u'Chamba', u' ', u'7fb9d989-3943-491a-9811-148e82e032f5', u'602c8cb7-4ebc-4f11-8039-fb365feb36b7', u'Mom') single poc
+Mom  

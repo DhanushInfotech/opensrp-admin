@@ -61,7 +61,7 @@ class HealthCentersTestCase(TestCase):
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ongole")
     def test_healthcenters(self):
         hospital = HealthCenters.objects.create(country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,hospital_name="yashoda",hospital_type="subcenter",hospital_address="begumpet",parent_hospital="appolo",villages="kukatpalli")
-        self.assertEqual(hospital.hospital_name,'yashoda',hospital.country_name)  
+        self.assertEqual(hospital.hospital_name,'yashoda',hospital.country_name)
         self.assertNotEqual(hospital.hospital_name,'yashodasfd')
         self.assertEqual(hospital.hospital_address,'begumpet')
         self.assertEqual(hospital.hospital_type,'subcenter')
@@ -73,7 +73,7 @@ class AppConfigurationTestCase(TestCase):
     def setUp(self):
         self.country=CountryTb.objects.create(country_name="India",country_code="91")
     def test_appconfiguration(self):
-    	configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",escalation_schedule="2")
+    	configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",escalation_schedule="2",phone_number_length=10,rapidpro_auth_token="ahdjkahsdkjahsdkhaksjdhkajshdkja")
     	self.assertEqual(configuration.wife_age_max,'60')
     	self.assertNotEqual(configuration.wife_age_min,'35')
 
@@ -129,7 +129,7 @@ class DrugInfoTestCase(TestCase):
         self.assertNotEqual(drug.anc_conditions,'pallor')
         self.assertNotEqual(drug.pnc_conditions,'Blurred Vision')
         self.assertNotEqual(drug.child_illness,'Cough')
-        self.assertEqual(len(drug.drug_name),5) 
+        self.assertEqual(len(drug.drug_name),5)
 
 
 class DrugAPITestCase(TestCase):
@@ -156,74 +156,19 @@ class VitalApi(TestCase):
     	visit = "123hkjqhdbkjash"
         visitNumber={'name':'ancVisitNumber','value':12}
         ancVisit={'name':'ancVisitDate','value':'10/10/2016'}
-        response = self.client.get("/vitalsdata/",data={'visit': "0663b5b4-49a5-4e48-bece-f88094a44c52"})
-        response = self.client.get("/vitalsdata/",data={'visit': "5c1fc968-6e9d-49b0-905e-c22e13b88cb0"})
+        response = self.client.get("/vitalsdata/",data={'visit': "720af35d-493f-46d3-a10d-453b675e3311"})
+        # response = self.client.get("/vitalsdata/",data={'visit': "5c1fc968-6e9d-49b0-905e-c22e13b88cb0"})
         self.failUnlessEqual(response.status_code, 200)
 
 class DocoverviewApi(TestCase):
     def test_docoverview(self):
-    	o_visitid = "123hkjqhdbkjash"
-    	o_entityid = "adjashkdhaskjd"
-        response = self.client.get("/docoverview/",data={'o_visitid': o_visitid,'o_entityid':o_entityid})
+    	o_visitid = "720af35d-493f-46d3-a10d-453b675e3311"
+    	o_entityid = "49d7da78-81dd-46a6-8861-19a63f70f80e"
+        response = self.client.get("/docoverview/",data={'visitid': o_visitid,'entityid':o_entityid})
+        response = self.client.get("/docoverview/",data={'visitid': '43a6b9a2-a186-4111-b0e4-7f6e80e71143','entityid':'130cc2cb-4477-4f3d-b38d-7f3dc26bae01'})
+        response = self.client.get("/docoverview/",data={'visitid': 'e77971a2-0bd1-444f-af6d-60a4d0b73d33','entityid':'20a90db7-8d4d-4f09-a251-453e13c3d55d'})
         self.failUnlessEqual(response.status_code, 200)
 
-class DocReferApi(TestCase):
-    def test_doctor_refer(self):
-        doc_id="docid"
-        visitid = "0663b5b4-49a5-4e48-bece-f88094a44c52"
-        entityid = "f3d77a5a-8c51-4f44-817f-acf7c821118f"
-        patientname = "patientname"
-        userrole="DOC"
-        userid="test123"
-        first_name="test"
-        last_name="unit"
-        password="123456"
-        mobile="123456789"
-        email="a@b.com"
-        self.country=CountryTb.objects.create(country_name="India")
-        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
-        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
-        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
-        self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
-        self.hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="subdistricthospital",active=True)
-        self.subdistrict_hospital_name=HealthCenters.objects.create(hospital_name="subdistricthospital",hospital_type="SubDistrict",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="districthospital",active=True)
-        self.district_hospital_name=HealthCenters.objects.create(hospital_name="districthospital",hospital_type="District",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,parent_hospital="countyhospital",active=True)
-        self.county_hospital_name=HealthCenters.objects.create(hospital_name="countyhospital",hospital_type="County",hospital_address="testaddress",country_name=self.country,county_name=self.county,parent_hospital="countryhospital",active=True)
-        self.country_hospital_name=HealthCenters.objects.create(hospital_name="countryhospital",hospital_type="Country",hospital_address="testaddress",country_name=self.country,parent_hospital="parent",active=True)
-        active=True
-        user=UserMasters.objects.create(user_role="DOC",user_id=userid,name=first_name,password=password,
-                                   phone_number=mobile,email=email,hospital=self.hospital_name,lastname=last_name,
-                                   county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
-        subdistrictuser=UserMasters.objects.create(user_role="DOC",user_id="subdistrictdoc",name=first_name,password=password,
-                                   phone_number=mobile,email=email,hospital=self.subdistrict_hospital_name,lastname=last_name,
-                                   county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
-        districtuser=UserMasters.objects.create(user_role="DOC",user_id="districtdoc",name=first_name,password=password,
-                           phone_number=mobile,email=email,hospital=self.district_hospital_name,lastname=last_name,
-                           county=self.county,country=self.country,district=self.district)
-        countyuser=UserMasters.objects.create(user_role="DOC",user_id="countydoc",name=first_name,password=password,
-                           phone_number=mobile,email=email,hospital=self.county_hospital_name,lastname=last_name,
-                           county=self.county,country=self.country)
-        countryuser=UserMasters.objects.create(user_role="DOC",user_id="countrydoc",name=first_name,password=password,
-                           phone_number=mobile,email=email,hospital=self.country_hospital_name,lastname=last_name,
-                           country=self.country)
-        poc_data = PocInfo.objects.create(visitentityid="0663b5b4-49a5-4e48-bece-f88094a44c52",entityidec="f3d77a5a-8c51-4f44-817f-acf7c821118f",phc="testhospital")
-        poc_data = PocInfo.objects.create(visitentityid="5c1fc968-6e9d-49b0-905e-c22e13b88cb0",entityidec="ddd5e997-10d2-4d2d-8606-9012c1db0061",phc="testhospital")
-        poc_data = PocInfo.objects.create(visitentityid="db22c1b0-2059-4c32-a1b5-2b9e5d121e42",entityidec="ddd5e997-10d2-4d2d-8606-9012c1db0061",phc="testhospital")
-        poc_data = PocInfo.objects.create(visitentityid="fc2beeea-2fab-4eb0-b92c-17a807b53926",entityidec="b99e9350-b7a4-4038-a4b2-11cea4b9a851",phc="testhospital")
-        response = self.client.get("/doctor_refer/",data={'docid': userid,'visitid': visitid,'entityid': entityid,'patientname': patientname})
-        self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/doctor_refer/",data={'docid': "subdistrictdoc",'visitid': visitid,'entityid': entityid,'patientname': patientname})
-        self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/doctor_refer/",data={'docid': "districtdoc",'visitid': visitid,'entityid': entityid,'patientname': patientname})
-        self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/doctor_refer/",data={'docid': "countydoc",'visitid': visitid,'entityid': entityid,'patientname': patientname})
-        self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/docoverview/",data={'visitid': visitid,'entityid': entityid})
-        self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/docoverview/",data={"visitid":"5c1fc968-6e9d-49b0-905e-c22e13b88cb0","entityid":"ddd5e997-10d2-4d2d-8606-9012c1db0061"})
-        self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/docoverview/",data={"visitid":"db22c1b0-2059-4c32-a1b5-2b9e5d121e42","entityid":"ddd5e997-10d2-4d2d-8606-9012c1db0061"})
-        self.failUnlessEqual(response.status_code, 200)
 
 class FormFieldsTestCase(TestCase):
     def setUp(self):
@@ -244,6 +189,113 @@ class UserMastersTestCase(TestCase):
         users = UserMasters.objects.create(user_role="ANM",user_id="anm",name="sudheer",password="sudheer",confirm_password="sudheer",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",subcenter=self.subcenter,villages="YPL",lastname="sandi",hospital=self.hospital,county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
         self.assertEqual(users.user_role,'ANM')
 
+    def test_app_reporting(self):
+        visitentityid = "0663b5b4-49a5-4e48-bece-f88094a44c52"
+        entityidec = "f3d77a5a-8c51-4f44-817f-acf7c821118f"
+        patient_name = "Test patient"
+        users = UserMasters.objects.create(user_role="ANM",user_id="TestAnm",name="sudheer",password="sudheer",confirm_password="sudheer",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",subcenter=self.subcenter,villages="YPL",
+                                           lastname="sandi",hospital=self.hospital,county=self.county,country=self.country,
+                                           district=self.district,subdistrict=self.subdistrict)
+        anm_id = "TestAnm"
+        activity = "anc"
+        #indicator = "asdasdsa"
+        indicator_count = 0
+        date = "2016-02-01"
+        location = "Chemoinoi"
+        child_weight = 0
+        visit_date = "2016-01-10"
+        visit_location = "elsewhere"
+        child_dob = "2015-11-23"
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                                     anm_id=anm_id,activity=activity,indicators="candom",indicator_count=1,
+                                     date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                                     visit_location=visit_location,dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                                     anm_id=anm_id,activity=activity,indicators="tt1",indicator_count=1,
+                                     date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                                     visit_location=visit_location,dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                                     anm_id=anm_id,activity=activity,indicators="tt2",indicator_count=1,
+                                     date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                                     visit_location=visit_location,dob=child_dob)
+
+
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                             visit_location="dh",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="dh",dob=child_dob)
+
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="condom",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="ecp",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="iud",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date=visit_date	,
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="condom",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="ecp",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="FP",indicators="iud",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="child",indicators="bcg opv_0 hepb_0 pentavalent_1 BF",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="child_illness",indicators="diarrhea_dehydration",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="Mortality",indicators="anctopnc_MaternalDeath",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="Mortality",indicators="anc_MaternalDeath",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
+                             anm_id=anm_id,activity="Mortality",indicators="pnc_MaternalDeath",indicator_count=4,
+                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
+                             visit_location="chc",dob=child_dob)
+        report = AppReporting.objects.get(indicators="tt1")
+        self.assertEquals(report.anm_id,"TestAnm")
+        #activity=ANC&anmid=anm111
+        response = self.client.get("/reporting/", data={"activity":"ANC","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/reporting/", data={"activity":"PREGNANCY","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/reporting/", data={"activity":"FP","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/reporting/", data={"activity":"child","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/reporting/", data={"activity":"mortality","anmid":"TestAnm"})
+        self.failUnlessEqual(response.status_code, 200)
+
 class AuthApi(TestCase):
     def setUp(self):
         self.country=CountryTb.objects.create(country_name="Pakistan",country_code="92")
@@ -253,8 +305,9 @@ class AuthApi(TestCase):
         self.hospital = HealthCenters.objects.create(country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,hospital_name="yashoda",hospital_type="Subcenter",hospital_address="begumpet",parent_hospital="appolo",villages="kukatpalli")
         self.subcenter = HealthCenters.objects.create(country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,hospital_name="yashoda",hospital_type="Subcenter",hospital_address="begumpet",parent_hospital="appolo",villages="kukatpalli")
         self.phc_hospital_name=HealthCenters.objects.create(hospital_name="authphc",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="subdistricthospital",active=True)
+        self.subdistrict_hospital_name=HealthCenters.objects.create(hospital_name="subdistricthospital",hospital_type="SubDistrict",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="subdistricthospital1",active=True)
     def test_auth(self):
-        configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",escalation_schedule="2")
+        configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",escalation_schedule="2",phone_number_length=10,rapidpro_auth_token="ahdjkahsdkjahsdkhaksjdhkajshdkja")
         form = FormFields.objects.create(form_name="anc_registration",country=self.country,field1="A",field2="B",field3="C",field4="D",field5="E")
         form = FormFields.objects.create(form_name="pnc_registration",country=self.country,field1="A",field2="B",field3="C",field4="D",field5="E")
         form = FormFields.objects.create(form_name="ec_registration",country=self.country,field1="A",field2="B",field3="C",field4="D",field5="E")
@@ -269,12 +322,10 @@ class AuthApi(TestCase):
         self.failUnlessEqual(response.status_code, 200)
         doc_users = UserMasters.objects.create(user_role="DOC",user_id="doc",name="doc",password="9305a83381280d88e2364062056f385314db03d1",confirm_password="9305a83381280d88e2364062056f385314db03d1",phone_number="9494022013",email="sudheer.s@dhanuhsinfotech.net",lastname="sandi",hospital=self.phc_hospital_name,county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
         response = self.client.get("/auth/", data={'userid': 'doc','pwd': 'sudheer'})
-        self.failUnlessEqual(response.status_code, 200)
-
 class DocApi(TestCase):
     def test_docinfo(self):
         userrole="DOC"
-        userid="test123"
+        userid="esdocphc"
         first_name="test"
         last_name="unit"
         password="123456"
@@ -285,15 +336,15 @@ class DocApi(TestCase):
         self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
         self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
         self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
-        self.hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="parent",active=True)
+        self.hospital_name=HealthCenters.objects.create(hospital_name="Eswar test PHC",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="parent",active=True)
         active=True
         user=UserMasters.objects.create(user_role="DOC",user_id=userid,name=first_name,password=password,
                                    phone_number=mobile,email=email,hospital=self.hospital_name,lastname=last_name,
                                    county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
-        poc_data = PocInfo.objects.create(visitentityid="0663b5b4-49a5-4e48-bece-f88094a44c52",entityidec="f3d77a5a-8c51-4f44-817f-acf7c821118f",phc="testhospital")
-        poc_data = PocInfo.objects.create(visitentityid="5c1fc968-6e9d-49b0-905e-c22e13b88cb0",entityidec="ddd5e997-10d2-4d2d-8606-9012c1db0061",phc="testhospital")
-        poc_data = PocInfo.objects.create(visitentityid="db22c1b0-2059-4c32-a1b5-2b9e5d121e42",entityidec="ddd5e997-10d2-4d2d-8606-9012c1db0061",phc="testhospital")
-        poc_data = PocInfo.objects.create(visitentityid="fc2beeea-2fab-4eb0-b92c-17a807b53926",entityidec="b99e9350-b7a4-4038-a4b2-11cea4b9a851",phc="testhospital")
+        poc_data = PocInfo.objects.create(visitentityid="720af35d-493f-46d3-a10d-453b675e3311",entityidec="49d7da78-81dd-46a6-8861-19a63f70f80e",phc="Eswar test PHC",docid="esdocphc")
+        poc_data = PocInfo.objects.create(visitentityid="43a6b9a2-a186-4111-b0e4-7f6e80e71143",entityidec="130cc2cb-4477-4f3d-b38d-7f3dc26bae01",phc="Eswar test PHC",docid="esdocphc")
+        poc_data = PocInfo.objects.create(visitentityid="e77971a2-0bd1-444f-af6d-60a4d0b73d33",entityidec="20a90db7-8d4d-4f09-a251-453e13c3d55d",phc="Eswar test PHC",docid="esdocphc")
+        # poc_data = PocInfo.objects.create(visitentityid="36efb92d-af1b-486d-b51e-25ed8c6eedda",entityidec="c4c3f823-86f6-4cbb-a9e7-c1d2133ea5d6",phc="Eswar test PHC")
         response = self.client.get("/docinfo/", data={'docname': userid,'pwd': password})
         self.failUnlessEqual(response.status_code, 200)
 
@@ -303,12 +354,12 @@ class AncDueTestCase(TestCase):
         anc = AncDue.objects.create(entityid="1234568",patientnum="9494022013",anmnum="8121337675",visittype="anc_visit",visitno="1",lmpdate="2015-07-25",womenname="sandya",visitdate="2015-10-17",anmid="anm111")
         self.assertEqual(anc.womenname,'sandya')
         self.assertEqual(len(anc.womenname),6)
-  
+
 class SendSmsApi(TestCase):
     def test_sendsms(self):
         phone_number = "9494022013"
         msg = "Poc is given to the patient"
-        response = self.client.get("/sendsms/", data={'phone_number': phone_number,'msg': msg })        
+        response = self.client.get("/sendsms/", data={'phone_number': phone_number,'msg': msg })
         self.failUnlessEqual(response.status_code, 200)
 
 class CountyApi(TestCase):
@@ -640,17 +691,18 @@ class DocSMSTest(TestCase):
         pph="9550726256"
         wsms="testw"
         psms="sms p"
-        docsms(workerph=wph,patientph=pph,worker_sms=wsms,patientsms=psms)
+        anmsms(workerph=wph,worker_sms=wsms)
+        patientsms(patientph=pph,patientsms=psms)
 
 class POCUpdateTest(TestCase):
-    def test_poc_update(self):
-        visit_id = "0663b5b4-49a5-4e48-bece-f88094a44c52"
-        entity_id = "f3d77a5a-8c51-4f44-817f-acf7c821118f"
-        document_id="380b0e1a64b294e8294cbb55c5086ea5"
+    def test_poc_update_pending(self):
+        visit_id = "4fe9bc8d-89a1-4c30-acad-2b4751b26bd3"
+        entity_id = "f2d89305-bff0-46ee-a7e1-deb0b664929f"
+        document_id="bf922ff0b9fe470b893ee267c758cb26"
         doctor_id="unittest"
-        pending="unittest"
+        pending="for unit test"
         patient_ph="123456789"
-        patient_name="test"
+        patient_name="newgrpsms"
         poc_data = "%7B%22investigations%22%3A%5B%22laboratory-Blood+Test+for+Human+immunodeficiency+virus+%28HIV%29+antibody%22%5D%2C%22planofCareDate%22%3A%2204-11-2015%22%2C%22drugs%22%3A%5B%7B%22dosage%22%3A%2235+ml%22%2C%22frequency%22%3A%22Every+12+Hours%22%2C%22drugNoOfDays%22%3A%226%22%2C%22drugQty%22%3A%228%22%2C%22direction%22%3A%22before+break+fast%22%2C%22drugName%22%3A%22Protein+and+Fatty+Acid+Supplement%22%7D%5D%2C%22diagnosis%22%3A%5B%22O07.5+-+Other+and+unspecified+failed+attempted+abortion%2C+complicated+by+genital+tract+and+pelvic+infection%22%5D%2C%22visitNumber%22%3A%221%22%2C%22doctorName%22%3A%22neha%22%2C%22advice%22%3A%22my+advice%22%2C%22documentId%22%3A%22c04214947963000c8d8d4e7f9e6cbeca%22%2C%22visitType%22%3A%22ANC%22%7D"
         response = self.client.get("/pocupdate/", data={'visitid':visit_id,'entityid':entity_id,'docid':document_id,'doctorid':doctor_id,
                                                         'pending':pending,'patientph':patient_ph,'patientname':patient_name,
@@ -664,108 +716,69 @@ class VisitConfigurationTest(TestCase):
     def test_visit_conf(self):
         visit = VisitConfiguration.objects.get(anc_visit1_from_week=4)
         self.assertEquals(visit.anc_visit1_to_week,6)
-
-class AppReportingTest(TestCase):
-     def test_app_reporting(self):
-        visitentityid = "0663b5b4-49a5-4e48-bece-f88094a44c52"
-        entityidec = "f3d77a5a-8c51-4f44-817f-acf7c821118f"
-        patient_name = "Test patient"
-        anm_id = "TestAnm"
-        activity = "anc"
-        #indicator = "asdasdsa"
-        indicator_count = 0
-        date = "2016-02-01"
-        location = "Chemoinoi"
-        child_weight = 0
-        visit_date = "2016-01-10"
-        visit_location = "elsewhere"
-        child_dob = "2015-11-23"
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                                     anm_id=anm_id,activity=activity,indicators="candom",indicator_count=1,
-                                     date=date,location=location,child_weight=child_weight,other_date=visit_date,
-                                     visit_location=visit_location,dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                                     anm_id=anm_id,activity=activity,indicators="tt1",indicator_count=1,
-                                     date=date,location=location,child_weight=child_weight,other_date=visit_date,
-                                     visit_location=visit_location,dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                                     anm_id=anm_id,activity=activity,indicators="tt2",indicator_count=1,
-                                     date=date,location=location,child_weight=child_weight,other_date=visit_date,
-                                     visit_location=visit_location,dob=child_dob)
-
-
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
-                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
-                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
-                             visit_location="dh",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="pnc",indicators="cesarean",indicator_count=0,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="dh",dob=child_dob)
-
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="FP",indicators="condom",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="FP",indicators="ecp",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date=visit_date,
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="FP",indicators="iud",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date=visit_date	,
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="FP",indicators="condom",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="FP",indicators="ecp",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="FP",indicators="iud",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="child",indicators="bcg opv_0 hepb_0 pentavalent_1 BF",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="child_illness",indicators="diarrhea_dehydration",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="chc",dob=child_dob)        
-
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="Mortality",indicators="anctopnc_MaternalDeath",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="Mortality",indicators="anc_MaternalDeath",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="chc",dob=child_dob)
-        AppReporting.objects.create(visitentityid=visitentityid,entityidec=entityidec,patient_name=patient_name,
-                             anm_id=anm_id,activity="Mortality",indicators="pnc_MaternalDeath",indicator_count=4,
-                             date=date,location=location,child_weight=child_weight,other_date="2015-04-23",
-                             visit_location="chc",dob=child_dob)
-        report = AppReporting.objects.get(indicators="tt1")
-        self.assertEquals(report.anm_id,"TestAnm")
-        #activity=ANC&anmid=anm111
-        response = self.client.get("/reporting/", data={"activity":"ANC","anmid":"TestAnm"})
+class DocReferApi(TestCase):
+    def test_doctor_refer(self):
+        doc_id="docid"
+        visitid = "0663b5b4-49a5-4e48-bece-f88094a44c52"
+        entityid = "f3d77a5a-8c51-4f44-817f-acf7c821118f"
+        patientname = "patientname"
+        userrole="DOC"
+        userid="test123"
+        first_name="test"
+        last_name="unit"
+        password="123456"
+        mobile="123456789"
+        email="a@b.com"
+        self.country=CountryTb.objects.create(country_name="India")
+        self.county=CountyTb.objects.create(country_name=self.country,county_name="fdsfjk")
+        self.district = Disttab.objects.create(country_name=self.country,county_name=self.county,district_name="fsdfkg")
+        self.subdistrict = SubdistrictTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict="ksljdjhf")
+        self.village = LocationTab.objects.create(country=self.country,county=self.county,district=self.district,subdistrict=self.subdistrict,location="dsfjkjk")
+        self.hospital_name=HealthCenters.objects.create(hospital_name="testhospital",hospital_type="PHC",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="subdistricthospital",active=True)
+        self.subdistrict_hospital_name=HealthCenters.objects.create(hospital_name="subdistricthospital",hospital_type="SubDistrict",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,subdistrict_name=self.subdistrict,parent_hospital="districthospital",active=True)
+        self.district_hospital_name=HealthCenters.objects.create(hospital_name="districthospital",hospital_type="District",hospital_address="testaddress",country_name=self.country,county_name=self.county,district_name=self.district,parent_hospital="countyhospital",active=True)
+        self.county_hospital_name=HealthCenters.objects.create(hospital_name="countyhospital",hospital_type="County",hospital_address="testaddress",country_name=self.country,county_name=self.county,parent_hospital="countryhospital",active=True)
+        self.country_hospital_name=HealthCenters.objects.create(hospital_name="countryhospital",hospital_type="Country",hospital_address="testaddress",country_name=self.country,parent_hospital="parent",active=True)
+        active=True
+        configuration = AppConfiguration.objects.create(country_name=self.country,wife_age_min="18",wife_age_max="60",husband_age_min="25",husband_age_max="74",temperature_units="celsius",escalation_schedule="2",phone_number_length=10,rapidpro_auth_token="ahdjkahsdkjahsdkhaksjdhkajshdkja")
+        user=UserMasters.objects.create(user_role="DOC",user_id=userid,name=first_name,password=password,
+                                   phone_number=mobile,email=email,hospital=self.hospital_name,lastname=last_name,
+                                   county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
+        subdistrictuser=UserMasters.objects.create(user_role="DOC",user_id="subdistrictdoc",name=first_name,password=password,
+                                   phone_number=mobile,email=email,hospital=self.subdistrict_hospital_name,lastname=last_name,
+                                   county=self.county,country=self.country,district=self.district,subdistrict=self.subdistrict)
+        districtuser=UserMasters.objects.create(user_role="DOC",user_id="districtdoc",name=first_name,password=password,
+                           phone_number=mobile,email=email,hospital=self.district_hospital_name,lastname=last_name,
+                           county=self.county,country=self.country,district=self.district)
+        countyuser=UserMasters.objects.create(user_role="DOC",user_id="countydoc",name=first_name,password=password,
+                           phone_number=mobile,email=email,hospital=self.county_hospital_name,lastname=last_name,
+                           county=self.county,country=self.country)
+        countryuser=UserMasters.objects.create(user_role="DOC",user_id="countrydoc",name=first_name,password=password,
+                           phone_number=mobile,email=email,hospital=self.country_hospital_name,lastname=last_name,
+                           country=self.country)
+        poc_data = PocInfo.objects.create(visitentityid="720af35d-493f-46d3-a10d-453b675e3311",entityidec="49d7da78-81dd-46a6-8861-19a63f70f80e",phc="Eswar test PHC",docid="esdocphc")
+        poc_data = PocInfo.objects.create(visitentityid="43a6b9a2-a186-4111-b0e4-7f6e80e71143",entityidec="130cc2cb-4477-4f3d-b38d-7f3dc26bae01",phc="Eswar test PHC",docid="esdocphc")
+        poc_data = PocInfo.objects.create(visitentityid="e77971a2-0bd1-444f-af6d-60a4d0b73d33",entityidec="20a90db7-8d4d-4f09-a251-453e13c3d55d",phc="Eswar test PHC",docid="esdocphc")
+        # poc_data = PocInfo.objects.create(visitentityid="fc2beeea-2fab-4eb0-b92c-17a807b53926",entityidec="b99e9350-b7a4-4038-a4b2-11cea4b9a851",phc="testhospital")
+        response = self.client.get("/doctor_refer/",data={'docid': userid,'visitid': visitid,'entityid': entityid,'patientname': patientname,'refdoc':'null'})
         self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/reporting/", data={"activity":"PREGNANCY","anmid":"TestAnm"})
+        response = self.client.get("/doctor_refer/",data={'docid': userid,'visitid': visitid,'entityid': entityid,'patientname': patientname,'refdoc':'subdistrictdoc'})
         self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/reporting/", data={"activity":"FP","anmid":"TestAnm"})
+        response = self.client.get("/doctor_refer/",data={'docid': "subdistrictdoc",'visitid': visitid,'entityid': entityid,'patientname': patientname,'refdoc':'null'})
         self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/reporting/", data={"activity":"child","anmid":"TestAnm"})
+        response = self.client.get("/doctor_refer/",data={'docid': "subdistrictdoc",'visitid': visitid,'entityid': entityid,'patientname': patientname,'refdoc':'districtdoc'})
         self.failUnlessEqual(response.status_code, 200)
-        response = self.client.get("/reporting/", data={"activity":"mortality","anmid":"TestAnm"})
+        response = self.client.get("/doctor_refer/",data={'docid': "districtdoc",'visitid': visitid,'entityid': entityid,'patientname': patientname,'refdoc':'null'})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/doctor_refer/",data={'docid': "districtdoc",'visitid': visitid,'entityid': entityid,'patientname': patientname,'refdoc':'countydoc'})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/doctor_refer/",data={'docid': "countydoc",'visitid': visitid,'entityid': entityid,'patientname': patientname,'refdoc':'null'})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/doctor_refer/",data={'docid': "countydoc",'visitid': visitid,'entityid': entityid,'patientname': patientname,'refdoc':'countrydoc'})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/docoverview/",data={'visitid': visitid,'entityid': entityid})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/docoverview/",data={"visitid":"5c1fc968-6e9d-49b0-905e-c22e13b88cb0","entityid":"ddd5e997-10d2-4d2d-8606-9012c1db0061"})
+        self.failUnlessEqual(response.status_code, 200)
+        response = self.client.get("/docoverview/",data={"visitid":"db22c1b0-2059-4c32-a1b5-2b9e5d121e42","entityid":"ddd5e997-10d2-4d2d-8606-9012c1db0061"})
         self.failUnlessEqual(response.status_code, 200)

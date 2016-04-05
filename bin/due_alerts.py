@@ -15,7 +15,7 @@ django.setup()
 from Masters.models import *
 from django.db import connection
 from datetime import date, timedelta,datetime
-from Masters.views import docsms
+from Masters.views import patientsms, anmsms
 
 def due_alerts_sms():
     due_date=str(datetime.strftime(datetime.now()+timedelta(days=1),'%Y-%m-%d'))
@@ -26,7 +26,9 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(anc[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(anc[0]),worker_sms=anm_sms,patientsms=patient_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(anc[0]),worker_sms=anm_sms,patientsms=patient_sms)
+        patient_sms = patientsms(patientph=str(anc[0]),patientsms=patient_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=anm_sms)
     opv_bcg_due_date=str(datetime.strftime(datetime.now(),'%Y-%m-%d'))
     opv1_pentavalent1_due_date=str(datetime.strftime(datetime.now()-timedelta(days=settings.OPV1_PENTAVALENT1_DAYS),'%Y-%m-%d'))
     opv2_pentavalent2_due_date=str(datetime.strftime(datetime.now()-timedelta(days=settings.OPV2_PENTAVALENT2_DAYS),'%Y-%m-%d'))
@@ -52,7 +54,9 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(opv[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opv[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opv[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        patient_sms = patientsms(patientph=str(opv[0]),patientsms=opv_bcg_mother_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=opv_bcg_anm_sms)
 
     for opv1 in opv1_pentavalent1_dues:
         opv1_pentavalent1_mother_sms = "Dear %s,Your Child Immunization OPV1,PENTAVALENT1 due date is on %s" %(str(opv1[1]),due_date)
@@ -60,7 +64,9 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(opv1[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opv1[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opv1[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        patient_sms = patientsms(patientph=str(opv1[0]),patientsms=opv1_pentavalent1_mother_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=opv1_pentavalent1_anm_sms)
 
     for opv2 in opv2_pentavalent2_dues:
         opv2_pentavalent2_mother_sms = "Dear %s,Your Child Immunization OPV2,PENTAVALENT2 due date is on %s" %(str(opv2[1]),due_date)
@@ -68,7 +74,9 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(opv2[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opv2[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opv2[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        patient_sms = patientsms(patientph=str(opv2[0]),patientsms=opv2_pentavalent2_mother_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=opv2_pentavalent2_anm_sms)
 
     for opv3 in opv3_pentavalent3_dues:
         opv3_pentavalent3_mother_sms = "Dear %s,Your Child Immunization OPV3,PENTAVALENT3 due date is on %s" %(str(opv3[1]),due_date)
@@ -76,7 +84,9 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(opv3[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opv3[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opv3[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        patient_sms = patientsms(patientph=str(opv3[0]),patientsms=opv3_pentavalent3_mother_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=opv3_pentavalent3_anm_sms)
 
     for measles in measles_dues:
         measles_mother_sms = "Dear %s,Your Child Immunization measles due date is on %s" %(str(measles[1]),due_date)
@@ -84,7 +94,9 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(measles[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(measles[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(measles[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        patient_sms = patientsms(patientph=str(measles[0]),patientsms=measles_mother_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=measles_anm_sms)
 
     for mmr in mmr_dues:
         mmr_mother_sms = "Dear %s,Your Child Immunization MMR due date is on %s" %(str(mmr[1]),due_date)
@@ -92,7 +104,9 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(mmr[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(mmr[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(mmr[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        patient_sms = patientsms(patientph=str(mmr[0]),patientsms=mmr_mother_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=mmmr_anm_sms)
 
     for measles2 in measles2_dptbooster1_dues:
         measles2_mother_sms = "Dear %s,Your Child Immunization MEASLES2 due date is on %s" %(str(measles2[1]),due_date)
@@ -100,7 +114,9 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(measles2[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(measles2[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(measles2[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        patient_sms = patientsms(patientph=str(measles2[0]),patientsms=measles2_mother_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=measles2_anm_sms)
 
     for opvbooster in opvbooster_dues:
         opvbooster_mother_sms = "Dear %s,Your Child Immunization OPVBOOSTER due date is on %s" %(str(opvbooster[1]),due_date)
@@ -108,7 +124,9 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(opvbooster[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opvbooster[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(opvbooster[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        patient_sms = patientsms(patientph=str(opvbooster[0]),patientsms=opvbooster_mother_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=opvbooster_anm_sms)
 
     for dptbooster2 in dptbooster2_dues:
         dptbooster2_mother_sms = "Dear %s,Your Child Immunization DPTBOOSTER2 due date is on %s" %(str(dptbooster2[1]),due_date)
@@ -116,7 +134,10 @@ def due_alerts_sms():
         country_name = UserMasters.objects.filter(user_id=str(anc[3])).values_list("country__country_name")[0][0]
         country_code = CountryTb.objects.filter(country_name=str(country_name)).values_list("country_code")[0][0]
         anmph = str(country_code)+str(str(dptbooster2[2])[-int(settings.PHONE_NUMBER_LENGTH):])
-        anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(dptbooster2[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        # anm_sms,patient_sms = docsms(workerph=anmph,patientph=str(dptbooster2[0]),worker_sms=opv_bcg_anm_sms,patientsms=opv_bcg_mother_sms)
+        patient_sms = patientsms(patientph=str(dptbooster2[0]),patientsms=dptbooster2_mother_sms)
+        anm_sms = anmsms(workerph=anmph,worker_sms=dptbooster2_anm_sms)
+
 
 if __name__ == "__main__":
     due_alerts_sms()

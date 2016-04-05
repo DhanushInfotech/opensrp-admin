@@ -244,7 +244,7 @@ class AppConfigurationAdmin(admin.ModelAdmin):
     search_fields = ('wife_age_min',)
     fieldsets = (
       (None, {
-          'fields': ('country_name','temperature_units','escalation_schedule','is_highrisk')
+          'fields': ('country_name','temperature_units','escalation_schedule','is_highrisk', "phone_number_length", "rapidpro_auth_token")
       }),
       ('Wife age', {
           'fields': ('wife_age_min','wife_age_max')
@@ -276,9 +276,9 @@ class FormFieldsAdmin(admin.ModelAdmin):
         return False
 
 class AnnualTargetAdmin(admin.ModelAdmin):
-    list_display = ('service_provider','indicator','target','start_date','end_date',)
-    search_fields = ('service_provider', )
-    list_filter = ('indicator',)
+    list_display = ('anm','indicators','target','year',)
+    search_fields = ('anm', )
+    list_filter = ('indicators',)
 
     def get_actions(self, request):
         actions = super(AnnualTargetAdmin, self).get_actions(request)
@@ -286,18 +286,7 @@ class AnnualTargetAdmin(admin.ModelAdmin):
         return actions
 
     def has_delete_permission(self, request, obj=None):
-        return False    
-
-class DimIndicatorAdmin(admin.ModelAdmin):
-    list_display = ('indicator',)
-
-    def get_actions(self, request):
-        actions = super(DimIndicatorAdmin, self).get_actions(request)
-        del actions['delete_selected']
-        return actions
-
-    def has_delete_permission(self, request, obj=None):
-        return False    
+        return False
 
 admin.site.register(DrugInfo,DrugInfoAdmin)
 admin.site.register(Frequency,FrequencyAdmin)
@@ -316,4 +305,3 @@ admin.site.register(HealthCenters,HealthCenterAdmin)
 admin.site.register(AppConfiguration,AppConfigurationAdmin)
 admin.site.register(FormFields,FormFieldsAdmin)
 admin.site.register(AnnualTarget,AnnualTargetAdmin)
-admin.site.register(DimIndicator,DimIndicatorAdmin)

@@ -39,7 +39,9 @@ def druginfo(request):
     return HttpResponse(result_json)
 
 def poc_update(request):
+    print request.method,"method"
     if request.method =="GET":
+        print "GET"
         document_id=request.GET.get("docid","")
         poc_info=request.GET.get("pocinfo","")
         visitid=request.GET.get("visitid","")
@@ -48,6 +50,8 @@ def poc_update(request):
         pending =request.GET.get("pending","")
         patientph =str(request.GET.get("patientph",""))
         patientname =str(request.GET.get("patientname",""))
+    print patientph,"patient ph number"
+    print "test"
     poc_details = json.loads(poc_info)
     poc = []
     poc_data = {}
@@ -67,11 +71,11 @@ def poc_update(request):
     poc_backup.save()
     #Reading all values from document
     result = {}
-    entity_detail="curl -s -H -X GET http://202.153.34.169:5984/drishti-form/_design/FormSubmission/_view/by_id/?key=%22"+str(document_id)+"%22"
+    entity_detail="curl -s -H -X GET http://"+settings.COUCHDB+"/drishti-form/_design/FormSubmission/_view/by_id/?key=%22"+str(document_id)+"%22"
     poc_output=commands.getoutput(entity_detail)
     poutput=json.loads(poc_output)
-    form_ins= poutput['rows'][0]['value'][2]
-    row_data = poutput['rows'][0]['value'][2]['formInstance']['form']['fields']
+    form_ins= poutput['rows'][0]['value'][1]
+    row_data = poutput['rows'][0]['value'][1]['formInstance']['form']['fields']
     #Updating docPocInfo with pending reason or poc
     for i in range((len(row_data))):
         row = row_data[i]
@@ -95,11 +99,9 @@ def poc_update(request):
     result["serverVersion"]=server_version
     result["type"]=str(form_ins["type"])
     ord_result = json.dumps(result)
-    poc_doc_update_curl = "curl -vX PUT http://202.153.34.169:5984/drishti-form/%s -d '''%s'''" %(str(document_id),ord_result)
+    poc_doc_update_curl = "curl -vX PUT http://"+settings.COUCHDB+"/drishti-form/%s -d '''%s'''" %(str(document_id),ord_result)
     poc_doc_update=commands.getoutput(poc_doc_update_curl)
 
-    if len(pending)>0:
-        update_poc=PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(pending=str(pending),docid=str(docid))
     #Updating backup table with latest poc/pending status info
     visit_info = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).values_list('visitentityid','entityidec','wifename')
     print visitid
@@ -107,6 +109,7 @@ def poc_update(request):
     print visit_info
     print "before 0"
     if len(pending)==0:
+	print "No pending status"
         anm_details = UserMasters.objects.filter(user_id=str(anmId)).values_list('phone_number','country__country_name')
         anm_country = str(anm_details[0][1])
         anm_phone = str(anm_details[0][0])
@@ -114,38 +117,60 @@ def poc_update(request):
         print visit_info
         if str(visit_info[0][2]) != "NULL":
             patientname=visit_info[0][2]
-        
+        sms_details=AppConfiguration.objects.filter(country_name__country_name=str(anm_country)).values_list("phone_number_length","rapidpro_auth_token")
         patient_sms = "Dear %s your prescription " %patientname
+        print poc_details,"poc"
+        #pront
         if len(poc_details["investigations"]) > 0:
             patient_sms+=" Investigations: "
             for investigation in poc_details["investigations"]:
-                patient_sms = patient_sms+investigation
+                patient_sms = patient_sms+str(investigation)
         if len(poc_details["drugs"]) > 0:
             patient_sms+=" drugs: "
             for drugs in poc_details["drugs"]:
-                patient_sms = patient_sms+drugs["drugName"]+drugs["direction"]+drugs["frequency"]+drugs["drugQty"]+drugs["drugNoOfDays"]
+                patient_sms = patient_sms+str(drugs["drugName"])+str(drugs["direction"])+str(drugs["frequency"])+str(drugs["drugQty"])+str(drugs["drugNoOfDays"])
         if len(poc_details["diagnosis"]) > 0:
             patient_sms+=" diagnosis: "
             for diagnosis in poc_details["diagnosis"]:
-                patient_sms = patient_sms+diagnosis
+                patient_sms = patient_sms+str(diagnosis)
         anm_sms = "POC is given for %s on " %patientname
         anm_sms+=datetime.now().strftime('%d-%b-%Y %H:%M:%S')
         country_code= str(CountryTb.objects.filter(country_name=str(anm_country)).values_list('country_code')[0][0])
-        anm_phone = country_code+anm_phone[-int(settings.PHONE_NUMBER_LENGTH):]
-        patient_phone = country_code+patientph[-int(settings.PHONE_NUMBER_LENGTH):]
-        anm_sms,patient_sms = docsms(workerph=anm_phone,patientph=patient_phone,worker_sms=anm_sms,patientsms=patient_sms)
-        #del_poc = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).delete()
+        print sms_details[0][0],"sms"
+        print anm_phone
+        print anm_phone[-int(sms_details[0][0])],"anmph"
+        anm_phone = country_code+anm_phone[-int(sms_details[0][0]):]
+        patient_sms = patient_sms.replace("\t","\\t").replace("\n","\\n").replace("\b","\\b")
+        print patientph[:-int(sms_details[0][0])],"patientph"
+        patient_phone = country_code+patientph[-int(sms_details[0][0]):]
+#        anm_sms = anmsms(workerph=anm_phone,worker_sms=anm_sms)
+        patient_sms = patientsms(patientph=patient_phone,patientsms=patient_sms,auth_token=str(sms_details[0][1]))
+        anm_sms = anmsms(workerph=anm_phone,worker_sms=anm_sms,auth_token=str(sms_details[0][1]))
+        print "calling doc sms"
+        del_poc = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).delete()
+    if len(pending)>0:
+        update_poc=PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(pending=str(pending),docid=str(docid))
     return HttpResponse(json.dumps({"status":"success"}))
 
-def docsms(workerph=None,patientph=None,worker_sms=None,patientsms=None):
-    anm_sms_var = '{"phone":["tel:'+str(workerph)+'"], "text":"' +worker_sms+'"}'
-    anm_sms_curl= 'curl -i -H "Authorization: Token 78ffc91c6a5287d7cc7a9a68c4903cc61d87aecb" -H "Content-type: application/json"  -H "Accept: application/json" POST -d'+ "'"+anm_sms_var+"'"+' http://202.153.34.174/api/v1/messages.json '
+def anmsms(workerph=None,worker_sms=None,auth_token=None):
+    #print "docsms",patientph
+    anm_sms_var = '{"phone":"'+str(workerph)+'", "text":"' +worker_sms+'"}'
+    sms_rp= 'curl -i -H "Authorization: Token %s" -H "Content-type: application/json"  -H "Accept: application/json" POST -d' %auth_token
+    anm_sms_curl=  sms_rp + "'"+anm_sms_var+"'"+' http://'+settings.RAPIDPROIP+'/api/v1/messages.json '
+    print anm_sms_curl,"anm_curl"
     anm_sms_output = commands.getoutput(anm_sms_curl)
+    print anm_sms_output
+    return anm_sms_output
+
+def patientsms(patientph=None,patientsms=None,auth_token=None):
     patient_sms=str(patientsms)
-    patient_sms_var = '{"phone":["tel:'+str(patientph)+'"], "text":"' +patient_sms+'"}'
-    patient_sms_curl= 'curl -i -H "Authorization: Token 78ffc91c6a5287d7cc7a9a68c4903cc61d87aecb" -H "Content-type: application/json"  -H "Accept: application/json" POST -d'+ "'"+patient_sms_var+"'"+' http://202.153.34.174/api/v1/messages.json '
+    patient_sms_var = '{"phone":"'+str(patientph)+'", "text":"' +patient_sms+'"}'
+    patient_sms_rp= 'curl -i -H "Authorization: Token %s" -H "Content-type: application/json"  -H "Accept: application/json" POST -d' %auth_token
+    patient_sms_curl=patient_sms_rp+"'"+patient_sms_var+"'"+' http://'+settings.RAPIDPROIP+'/api/v1/messages.json '
+    print patient_sms_curl,"patient_curl"
     patient_sms_output = commands.getoutput(patient_sms_curl)
-    return anm_sms_output,patient_sms_output
+    print patient_sms_output
+    return patient_sms_output
 
 def docinfo(request):
     if request.method == "GET":
@@ -157,17 +182,25 @@ def docinfo(request):
     	doc_loc = str(doc_loc[0][0]).replace(" (PHC)","")
     else:
     	return HttpResponse('{"status":"Invalid username/password"}')
+    # print doc_loc,"loc"
     resultdata=defaultdict(list)
     display_result=[]
-    entity_list = PocInfo.objects.filter(phc=doc_loc).values_list('visitentityid','entityidec','pending','docid').distinct()
+    entity_list = PocInfo.objects.filter(phc=doc_loc).values_list('visitentityid','entityidec','pending','docid',"wifename")
+    # print entity_list,"listdata"
     if len(entity_list) == 0:
     	return HttpResponse(json.dumps(display_result))
     for entity in entity_list:
+        print entity,"en"
         if str(entity[2])!='None':
-            if len(entity[2])>1 and str(doc_name) != str(entity[3]):
+            print entity[2],"pending",entity[-1]
+            print doc_name,"==",entity[3]
+            if (len(entity[2])>1 or len(entity[2])==0) and str(doc_name) != str(entity[3]):
+                # print entity[0],"continue"
                 continue
     	entity_detail_id=str(entity[1])
+        print entity[0]
         ancvisit_detail="curl -s -H -X GET http://"+settings.COUCHDB+"/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+str(entity[0])+"%22&descending=true"
+        print ancvisit_detail
         visit_output = commands.getoutput(ancvisit_detail)
         visit_data1 = json.loads(visit_output)
         row = visit_data1['rows']
@@ -175,126 +208,158 @@ def docinfo(request):
         poc_len=1
         doc_con='no'
         visit={}
+        visit_server_version=0
         newvisitdata=defaultdict(list)
         newvisit={}
-        field_data = row[-1]['value'][1]['form']['fields']
-        for f in range((len(field_data)-1),-1,-1):
-            fd = field_data[f]
-            if 'name' in fd.keys():
-                if fd['name'] == 'docPocInfo':
-                    poc_len=len(fd['value'])
-                elif fd['name'] == 'isConsultDoctor':
-                    doc_con = fd['value']
-        if doc_con == 'yes':
-            #-----------------PNC DATA --------------
-            if row[-1]['value'][0] == 'pnc_visit' or row[-1]['value'][0] == 'pnc_visit_edit':
-                doc_id=row[-1]['id']
-                for visitdata in row:
-                    pnc_tags = ["pncNumber","pncVisitDate","difficulties1","difficulties2","abdominalProblems","urineStoolProblems",
-                                "hasFeverSymptoms","breastProblems","vaginalProblems","bpSystolic","bpDiastolic","temperature","pulseRate",
-                                "bloodGlucoseData","weight","anmPoc","pncVisitPlace","pncVisitDate","isHighRisk","hbLevel","pstechoscopeData"]
-                    f = lambda x: x[0].get("value") if len(x)>0 else ""
-                    fetched_dict = copyf(visitdata["value"][1]["form"]["fields"],"name",pnc_tags)
-                    visit["pncNumber"]=f(copyf(fetched_dict,"name","pncNumber"))
-                    visit["pncVisitDate"]=f(copyf(fetched_dict,"name","pncVisitDate"))
-                    visit["difficulties1"]=f(copyf(fetched_dict,"name","difficulties1"))
-                    visit["difficulties2"]=f(copyf(fetched_dict,"name","difficulties2"))
-                    visit["abdominalProblems"]=f(copyf(fetched_dict,"name","abdominalProblems"))
-                    visit["urineStoolProblems"]=f(copyf(fetched_dict,"name","urineStoolProblems"))
-                    visit["hasFeverSymptoms"]=f(copyf(fetched_dict,"name","hasFeverSymptoms"))
-                    visit["breastProblems"]=f(copyf(fetched_dict,"name","breastProblems"))
-                    visit["vaginalProblems"]=f(copyf(fetched_dict,"name","vaginalProblems"))
-                    visit["bpSystolic"]=f(copyf(fetched_dict,"name","bpSystolic"))
-                    visit["bpDiastolic"]=f(copyf(fetched_dict,"name","bpDiastolic"))
-                    visit["temperature"]=f(copyf(fetched_dict,"name","temperature"))
-                    visit["pulseRate"]=f(copyf(fetched_dict,"name","pulseRate"))
-                    visit["bloodGlucoseData"]=f(copyf(fetched_dict,"name","bloodGlucoseData"))
-                    visit["weight"]=f(copyf(fetched_dict,"name","weight"))
-                    visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
-                    visit["pstechoscopeData"]=f(copyf(fetched_dict,"name","pstechoscopeData"))
-                    visit["pncVisitPlace"]=f(copyf(fetched_dict,"name","pncVisitPlace"))
-                    visit["pncVisitDate"]=f(copyf(fetched_dict,"name","pncVisitDate"))
-                    visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
-                    visit["hbLevel"]=f(copyf(fetched_dict,"name","hbLevel"))
-                    visit['visit_type'] = 'PNC'
-                    visit["entityid"] = entity[0]
-                    visit['id']=doc_id
-                visit_data.append(visit)
+        # print "+++++++++++++++++"
+        # print len(row),"r"
+        for r in range(len(row)):
+            field_data = row[r]['value'][1]['form']['fields']
+            for f in range((len(field_data)-1),-1,-1):
+                fd = field_data[f]
+                if 'name' in fd.keys():
+                    if fd['name'] == 'docPocInfo':
+                        poc_len=len(fd['value'])
+                    elif fd['name'] == 'isConsultDoctor' or fd['name'] == 'isPNCConsultDoctor' or fd['name'] == 'isANCConsultDoctor' or fd['name'] == 'isChildConsultDoctor':
+                        doc_con = fd['value']
+            if doc_con == 'yes':
+                # new_visit_server_version=row[r]['value'][-1]
+                # print visit_server_version,"<=",new_visit_server_version
+                # if visit_server_version<=new_visit_server_version:
+                #     print "condition true"
+                #-----------------PNC DATA --------------
+                if row[-1]['value'][0] == 'pnc_visit' or row[-1]['value'][0] == 'pnc_visit_edit':
+                    # visit_server_version=row[r]['value'][-1]
+                    doc_id=row[r]['id']
+                    anmId=row[r]["value"][2]
+                    for visitdata in row:
+                        new_visit_server_version=visitdata["value"][-1]
+                        if visit_server_version <=new_visit_server_version:
+                            visit_server_version=new_visit_server_version
+                            pnc_tags = ["pncNumber","pncVisitDate","difficulties1","difficulties2","abdominalProblems","urineStoolProblems",
+                                        "hasFeverSymptoms","breastProblems","vaginalProblems","bpSystolic","bpDiastolic","temperature","pulseRate",
+                                        "bloodGlucoseData","weight","anmPoc","pncVisitPlace","pncVisitDate","isHighRisk","hbLevel",
+                                        "pstechoscopeData"]
+                            f = lambda x: x[0].get("value") if len(x)>0 else ""
+                            fetched_dict = copyf(visitdata["value"][1]["form"]["fields"],"name",pnc_tags)
+                            visit["pncNumber"]=f(copyf(fetched_dict,"name","pncNumber"))
+                            visit["pncVisitDate"]=f(copyf(fetched_dict,"name","pncVisitDate"))
+                            visit["difficulties1"]=f(copyf(fetched_dict,"name","difficulties1"))
+                            visit["difficulties2"]=f(copyf(fetched_dict,"name","difficulties2"))
+                            visit["abdominalProblems"]=f(copyf(fetched_dict,"name","abdominalProblems"))
+                            visit["urineStoolProblems"]=f(copyf(fetched_dict,"name","urineStoolProblems"))
+                            visit["hasFeverSymptoms"]=f(copyf(fetched_dict,"name","hasFeverSymptoms"))
+                            visit["breastProblems"]=f(copyf(fetched_dict,"name","breastProblems"))
+                            visit["vaginalProblems"]=f(copyf(fetched_dict,"name","vaginalProblems"))
+                            visit["bpSystolic"]=f(copyf(fetched_dict,"name","bpSystolic"))
+                            visit["bpDiastolic"]=f(copyf(fetched_dict,"name","bpDiastolic"))
+                            visit["temperature"]=f(copyf(fetched_dict,"name","temperature"))
+                            visit["pulseRate"]=f(copyf(fetched_dict,"name","pulseRate"))
+                            visit["bloodGlucoseData"]=f(copyf(fetched_dict,"name","bloodGlucoseData"))
+                            visit["weight"]=f(copyf(fetched_dict,"name","weight"))
+                            visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
+                            visit["pstechoscopeData"]=f(copyf(fetched_dict,"name","pstechoscopeData"))
+                            visit["pncVisitPlace"]=f(copyf(fetched_dict,"name","pncVisitPlace"))
+                            visit["pncVisitDate"]=f(copyf(fetched_dict,"name","pncVisitDate"))
+                            visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
+                            visit["hbLevel"]=f(copyf(fetched_dict,"name","hbLevel"))
+                            visit['visit_type'] = 'PNC'
+                            visit["entityid"] = entity[0]
+                            visit['id']=doc_id
+                        visit_data.append(visit)
 
-            elif row[-1]['value'][0] == 'anc_visit' or row[-1]['value'][0] == 'anc_visit_edit':
-                doc_id=row[-1]['id']
-                for visitdata in row:
-                    anc_tags = ["ancVisitNumber","ancNumber","ancVisitPerson","ancVisitDate","riskObservedDuringANC","bpSystolic","bpDiastolic",
-                                "temperature","pulseRate","bloodGlucoseData","weight","anmPoc","isHighRisk","fetalData","pstechoscopeData"]
-                    f = lambda x: x[0].get("value") if len(x)>0 else ""
-                    fetched_dict = copyf(visitdata["value"][1]["form"]["fields"],"name",anc_tags)
-                    visit["ancVisitNumber"]=f(copyf(fetched_dict,"name","ancVisitNumber"))
-                    visit["ancNumber"]=f(copyf(fetched_dict,"name","ancNumber"))
-                    visit["ancVisitPerson"]=f(copyf(fetched_dict,"name","ancVisitPerson"))
-                    visit["ancVisitDate"]=f(copyf(fetched_dict,"name","ancVisitDate"))
-                    visit["riskObservedDuringANC"]=f(copyf(fetched_dict,"name","riskObservedDuringANC"))
-                    visit["bpSystolic"]=f(copyf(fetched_dict,"name","bpSystolic"))
-                    visit["bpDiastolic"]=f(copyf(fetched_dict,"name","bpDiastolic"))
-                    visit["temperature"]=f(copyf(fetched_dict,"name","temperature"))
-                    visit["pulseRate"]=f(copyf(fetched_dict,"name","pulseRate"))
-                    visit["bpSystolic"]=f(copyf(fetched_dict,"name","bpSystolic"))
-                    visit["bpDiastolic"]=f(copyf(fetched_dict,"name","bpDiastolic"))
-                    visit["temperature"]=f(copyf(fetched_dict,"name","temperature"))
-                    visit["pulseRate"]=f(copyf(fetched_dict,"name","pulseRate"))
-                    visit["bloodGlucoseData"]=f(copyf(fetched_dict,"name","bloodGlucoseData"))
-                    visit["weight"]=f(copyf(fetched_dict,"name","weight"))
-                    visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
-                    visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
-                    visit["pstechoscopeData"]=f(copyf(fetched_dict,"name","pstechoscopeData"))
-                    visit["fetalData"]=f(copyf(fetched_dict,"name","fetalData"))
-                    visit['visit_type'] = 'ANC'
-                    visit["entityid"] = entity[0]
-                    visit['id']=doc_id
-                visit_data.append(visit)
-            elif row[-1]['value'][0] == 'child_illness' or row[-1]['value'][0] == 'child_illness_edit':
-                doc_id=row[-1]['id']
-                for childdata in row:
-                    child_tags = ["dateOfBirth","childSigns","childSignsOther","immediateReferral","immediateReferralReason","reportChildDiseaseDate","reportChildDisease","reportChildDiseaseOther"
-                                ,"reportChildDiseasePlace","childTemperature","numberOfORSGiven","childReferral","anmPoc","isHighRisk","submissionDate","id","numberOfDaysCough","breathsPerMinute","daysOfDiarrhea","bloodInStool","vommitEveryThing","daysOfFever","sickVisitDate"]
-                    f = lambda x: x[-1].get("value") if len(x)>0 else ""
-                    fetched_dict = copyf(childdata["value"][1]["form"]["fields"],"name",child_tags)
-                    visit["dateOfBirth"]=f(copyf(fetched_dict,"name","dateOfBirth"))
-                    visit["childSigns"]=f(copyf(fetched_dict,"name","childSigns"))
-                    visit["childSignsOther"]=f(copyf(fetched_dict,"name","childSignsOther"))
-                    visit["immediateReferral"]=f(copyf(fetched_dict,"name","immediateReferral"))
-                    visit["immediateReferralReason"]=f(copyf(fetched_dict,"name","immediateReferralReason"))
-                    visit["reportChildDisease"]=f(copyf(fetched_dict,"name","reportChildDisease"))
-                    visit["reportChildDiseaseOther"]=f(copyf(fetched_dict,"name","reportChildDiseaseOther"))
-                    visit["reportChildDiseaseDate"]=f(copyf(fetched_dict,"name","reportChildDiseaseDate"))
-                    visit["reportChildDiseasePlace"]=f(copyf(fetched_dict,"name","reportChildDiseasePlace"))
-                    visit["childTemperature"]=f(copyf(fetched_dict,"name","childTemperature"))
-                    visit["numberOfORSGiven"]=f(copyf(fetched_dict,"name","numberOfORSGiven"))
-                    visit["childReferral"]=f(copyf(fetched_dict,"name","childReferral"))
-                    visit["numberOfDaysCough"]=f(copyf(fetched_dict,"name","numberOfDaysCough"))
-                    visit["breathsPerMinute"]=f(copyf(fetched_dict,"name","breathsPerMinute"))
-                    visit["daysOfDiarrhea"]=f(copyf(fetched_dict,"name","daysOfDiarrhea"))
-                    visit["bloodInStool"]=f(copyf(fetched_dict,"name","bloodInStool"))
-                    visit["vommitEveryThing"]=f(copyf(fetched_dict,"name","vommitEveryThing"))
-                    visit["daysOfFever"]=f(copyf(fetched_dict,"name","daysOfFever"))
-                    visit["sickVisitDate"]=f(copyf(fetched_dict,"name","sickVisitDate"))
-                    visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
-                    visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
-                    visit["submissionDate"]=f(copyf(fetched_dict,"name","submissionDate"))
-                    visit["id"]=doc_id
-                    visit['visit_type'] = 'CHILD'
-                    visit["entityid"] = entity[0]
-                visit_data.append(visit)
+                elif row[-1]['value'][0] == 'anc_visit' or row[-1]['value'][0] == 'anc_visit_edit':
+                    visit_server_version=row[r]['value'][-1]
+                    doc_id=row[r]['id']
+                    anmId=row[r]["value"][2]
+                    for visitdata in row:
+                        new_visit_server_version=visitdata["value"][-1]
+                        if visit_server_version <=new_visit_server_version:
+                            visit_server_version=new_visit_server_version
+                            anc_tags = ["ancVisitNumber","ancNumber","ancVisitPerson","ancVisitDate","riskObservedDuringANC","bpSystolic","bpDiastolic",
+                                        "temperature","pulseRate","bloodGlucoseData","weight","anmPoc","isHighRisk","fetalData","pstechoscopeData"]
+                            f = lambda x: x[0].get("value") if len(x)>0 else ""
+                            fetched_dict = copyf(visitdata["value"][1]["form"]["fields"],"name",anc_tags)
+                            visit["ancVisitNumber"]=f(copyf(fetched_dict,"name","ancVisitNumber"))
+                            visit["ancNumber"]=f(copyf(fetched_dict,"name","ancNumber"))
+                            visit["ancVisitPerson"]=f(copyf(fetched_dict,"name","ancVisitPerson"))
+                            visit["ancVisitDate"]=f(copyf(fetched_dict,"name","ancVisitDate"))
+                            visit["riskObservedDuringANC"]=f(copyf(fetched_dict,"name","riskObservedDuringANC"))
+                            visit["bpSystolic"]=f(copyf(fetched_dict,"name","bpSystolic"))
+                            visit["bpDiastolic"]=f(copyf(fetched_dict,"name","bpDiastolic"))
+                            visit["temperature"]=f(copyf(fetched_dict,"name","temperature"))
+                            visit["pulseRate"]=f(copyf(fetched_dict,"name","pulseRate"))
+                            visit["bpSystolic"]=f(copyf(fetched_dict,"name","bpSystolic"))
+                            visit["bpDiastolic"]=f(copyf(fetched_dict,"name","bpDiastolic"))
+                            visit["temperature"]=f(copyf(fetched_dict,"name","temperature"))
+                            visit["pulseRate"]=f(copyf(fetched_dict,"name","pulseRate"))
+                            visit["bloodGlucoseData"]=f(copyf(fetched_dict,"name","bloodGlucoseData"))
+                            visit["weight"]=f(copyf(fetched_dict,"name","weight"))
+                            visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
+                            visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
+                            visit["pstechoscopeData"]=f(copyf(fetched_dict,"name","pstechoscopeData"))
+                            visit["fetalData"]=f(copyf(fetched_dict,"name","fetalData"))
+                            visit['visit_type'] = 'ANC'
+                            visit["entityid"] = entity[0]
+                            visit['id']=doc_id
+                        visit_data.append(visit)
+                elif row[-1]['value'][0] == "anc_close" or row[-1]['value'][0] == "pnc_close":
+                            continue
+                elif row[-1]['value'][0] == 'child_illness' or row[-1]['value'][0] == 'child_illness_edit':
+                    visit_server_version=row[r]['value'][-1]
+                    doc_id=row[r]['id']
+                    anmId=row[r]["value"][2]
+                    for childdata in row:
+                        new_visit_server_version=childdata["value"][-1]
+                        if visit_server_version <=new_visit_server_version:
+                            visit_server_version=new_visit_server_version
+                            child_tags = ["dateOfBirth","childSigns","childSignsOther","immediateReferral","immediateReferralReason","reportChildDiseaseDate","reportChildDisease","reportChildDiseaseOther"
+                                        ,"reportChildDiseasePlace","childTemperature","numberOfORSGiven","childReferral","anmPoc","isHighRisk","submissionDate","id","numberOfDaysCough","breathsPerMinute","daysOfDiarrhea","bloodInStool","vommitEveryThing","daysOfFever","sickVisitDate","gender"]
+                            f = lambda x: x[-1].get("value") if len(x)>0 else ""
+                            fetched_dict = copyf(childdata["value"][1]["form"]["fields"],"name",child_tags)
+                            visit["dateOfBirth"]=f(copyf(fetched_dict,"name","dateOfBirth"))
+                            visit["childSigns"]=f(copyf(fetched_dict,"name","childSigns"))
+                            visit["childSignsOther"]=f(copyf(fetched_dict,"name","childSignsOther"))
+                            visit["immediateReferral"]=f(copyf(fetched_dict,"name","immediateReferral"))
+                            visit["immediateReferralReason"]=f(copyf(fetched_dict,"name","immediateReferralReason"))
+                            visit["reportChildDisease"]=f(copyf(fetched_dict,"name","reportChildDisease"))
+                            visit["reportChildDiseaseOther"]=f(copyf(fetched_dict,"name","reportChildDiseaseOther"))
+                            visit["reportChildDiseaseDate"]=f(copyf(fetched_dict,"name","reportChildDiseaseDate"))
+                            visit["reportChildDiseasePlace"]=f(copyf(fetched_dict,"name","reportChildDiseasePlace"))
+                            visit["childTemperature"]=f(copyf(fetched_dict,"name","childTemperature"))
+                            visit["numberOfORSGiven"]=f(copyf(fetched_dict,"name","numberOfORSGiven"))
+                            visit["childReferral"]=f(copyf(fetched_dict,"name","childReferral"))
+                            visit["numberOfDaysCough"]=f(copyf(fetched_dict,"name","numberOfDaysCough"))
+                            visit["breathsPerMinute"]=f(copyf(fetched_dict,"name","breathsPerMinute"))
+                            visit["daysOfDiarrhea"]=f(copyf(fetched_dict,"name","daysOfDiarrhea"))
+                            visit["bloodInStool"]=f(copyf(fetched_dict,"name","bloodInStool"))
+                            visit["vommitEveryThing"]=f(copyf(fetched_dict,"name","vommitEveryThing"))
+                            visit["daysOfFever"]=f(copyf(fetched_dict,"name","daysOfFever"))
+                            visit["sickVisitDate"]=f(copyf(fetched_dict,"name","sickVisitDate"))
+                            visit["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
+                            visit["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
+                            visit["submissionDate"]=f(copyf(fetched_dict,"name","submissionDate"))
+                            visit["gender"]=f(copyf(fetched_dict,"name","gender"))
+                            visit["id"]=doc_id
+                            visit['visit_type'] = 'CHILD'
+                            visit["entityid"] = entity[0]
+                        visit_data.append(visit)
 
+        # print visit_data,"vd"
         entity_detail="curl -s -H -X GET http://"+settings.COUCHDB+"/drishti-form/_design/FormSubmission/_view/by_EntityId?key=%22"+entity_detail_id+"%22&descending=true"
-        #print entity_detail
+        print entity_detail,"hi"
+
         poc_output=commands.getoutput(entity_detail)
         poutput=json.loads(poc_output)
+        print poutput,"poutput"
         row1 = poutput['rows']
+        server_version =0
         if len(visit_data)>0:
             result=defaultdict(list)
             if len(row1)>0:
                 for i in range(len(row1)):
                     for data in row1[i]["value"][1]['form']['fields']:
+                        new_server_version=row1[i]["value"][-1]
                         if row1[i]['value'][0] == "anc_registration_oa" or row1[i]['value'][0]=="anc_registration" or row1[i]['value'][0]=="anc_reg_edit_oa" or row1[i]['value'][0]=="anc_reg_edit" or row1[i]['value'][0]=="child_registration_ec" or row1[i]['value'][0]=="delivery_outcome":
                             key=data.get('name')
                             value=data.get('value')
@@ -312,36 +377,24 @@ def docinfo(request):
                                     visit['lmp']=lmp
                                     visit_data.append(visit)
                             elif key == 'gender':
-                                visit['gender']=value    
-                        # elif row1[i]['value'][0] == "child_registration_oa":
-                        #     key = data.get('name')
-                        #     if 'value' in child_data.keys():
-                        #         value = child_data.get('value')
-                        #     else:
-                        #         value=''
-                        #     if key == 'gender':
-                        #         visit['gender']=value
-                        #     elif key == 'name':
-                        #         visit['name']=value
-                        #     elif key == 'registrationDate':
-                        #         visit['registrationDate']=value
-                        #     elif key == 'motherName':
-                        #         temp={}
-                        #         temp={"wifeName":value}
-                        #         result.update(temp)
-                        #     elif key == 'fatherName':
-                        #         temp={}
-                        #         temp={"husbandName":value}
-                        #         result.update(temp)
+                                visit['gender']=value
                         elif row1[i]['value'][0] == "anc_close" or row1[i]['value'][0] == "pnc_close":
                             continue
-
+                        if 'sub_forms' in row1[i]["value"][1]['form'].keys():
+                            pnc_child_reg=row1[i]["value"][1]['form']['sub_forms'][0]["instances"]
+                        # print pnc_child_reg,"pnc child"
+                        #     if len(pnc_child_reg)>0:
+                            for reg in pnc_child_reg:
+                                if str(reg["id"]) == str(entity[0]):
+                                    visit['gender']=str(reg["gender"])
                         key=data.get('name')
                         value=data.get('value')
-                        if key=='wifeName':
+                        if key=='wifeName' and server_version<new_server_version:
                             temp={}
                             temp={key:value}
+                            # print temp,"wifename"
                             result.update(temp)
+                            server_version=new_server_version
                         elif key=='wifeAge':
                             temp={}
                             temp={key:value}
@@ -369,8 +422,9 @@ def docinfo(request):
                     temp_list=[]
                     temp_list.append(visit_data[-1])
                     result["riskinfo"]=temp_list
+                    # print result,"result"
                     result["entityidec"] = entity_detail_id
-                    result["anmId"] = row1[0]['value'][2]
+                    result["anmId"] = anmId
                     if str(entity[2]) == "None":
                         result["pending"]=""
                     else:
@@ -390,10 +444,12 @@ def docinfo(request):
                             else:
                                 value=''
                             if key == 'gender':
-                            	print "gender"
+                            	# print "gender"
                                 visit['gender']=value
+                                # print value,"gender"
                             elif key == 'name':
                                 visit['name']=value
+                                # print value,"name"
                             elif key == 'registrationDate':
                                 visit['registrationDate']=value
                             elif key =='edd':
@@ -405,7 +461,7 @@ def docinfo(request):
                             elif key == 'motherName':
                                 temp={}
                                 temp={"wifeName":value}
-                                print temp
+                                # print temp
                                 result.update(temp)
                             elif key == 'fatherName':
                                 temp={}
@@ -420,9 +476,9 @@ def docinfo(request):
                 result["riskinfo"]=temp_list
                 result["entityidec"] = entity_detail_id
                 if str(entity[2]) == "None":
-                    visit["pending"]=""
+                    result["pending"]=""
                 else:
-                    visit["pending"]=str(entity[2])
+                    result["pending"]=str(entity[2])
                 display_result.append(result)
     end_res= json.dumps(display_result)
     return HttpResponse(end_res)
@@ -444,6 +500,7 @@ def auth(request):
     pwd = hashlib.sha1()
     pwd.update(password)
     password = pwd.hexdigest()
+    print password
     user_details=UserMasters.objects.filter(user_id=str(username),password=password).values_list('user_role','id','name','country')
     if len(user_details) ==0:
         return HttpResponse('{"status":"Invalid username/password"}')
@@ -455,7 +512,22 @@ def auth(request):
     user_data["role"] = str(user_role)
     if user_role.upper() =='DOC':
         doc_details=UserMasters.objects.filter(id=int(user_details[0][1])).values_list('country','county','district','subdistrict','hospital','phone_number','email')
+        parent_hospital_details= HealthCenters.objects.filter(id=doc_details[0][4]).values_list("parent_hospital")
+        print parent_hospital_details,"details"
+        if len(parent_hospital_details)>0:
+            print "if"
+            parent_hos_obj = HealthCenters.objects.get(hospital_name=str(parent_hospital_details[0][0]))
+            doc_parent_hos = UserMasters.objects.filter(hospital=parent_hos_obj.id)
         user_data["personal_info"]={"hospital":doc_details[0][4],"phone":str(doc_details[0][5]),"email":str(doc_details[0][6])}
+        parent_doctors=[]
+
+        for doc in doc_parent_hos:
+            parent_doctor={}
+            print doc,"doc"
+            parent_doctor["name"]=doc.name+" "+doc.lastname
+            parent_doctor["userid"]=doc.user_id
+            parent_doctors.append(parent_doctor)
+        user_data["parent_doctors"]=parent_doctors
     elif user_role.upper() == 'ANM':
         location = {}
         anm_details=UserMasters.objects.filter(id=int(user_details[0][1])).values_list('country__country_name','county__county_name','district__district_name','subdistrict__subdistrict','subcenter__hospital_name','villages','phone_number','email')
@@ -526,6 +598,12 @@ def vitalsdata(request):
             visit_reading["fetalData"]= copyf(fetched_dict,'name','fetalData')[0].get('value','0')
             visit_reading["bloodGlucoseData"]= copyf(fetched_dict,'name','bloodGlucoseData')[0].get('value','0')
             vital_readings.append(visit_reading)
+        elif visit['value'][0] == 'child_illness':
+            required_values= ['childTemperature']
+            fetched_dict = copyf(visit['value'][1]['form']['fields'],'name',required_values)
+            print copyf(fetched_dict,'name','childTemperature')
+            visit_reading["childTemperature"]= copyf(fetched_dict,'name','childTemperature')[0].get('value','0')
+            vital_readings.append(visit_reading)    
     return HttpResponse(json.dumps(vital_readings))
 
 def copyf(dictlist, key, valuelist):
@@ -537,58 +615,125 @@ def doctor_refer(request):
         visitid = request.GET.get("visitid","")
         entityid = request.GET.get("entityid","")
         patientname = str(request.GET.get("patientname",""))
-    doc_details = UserMasters.objects.filter(user_id=str(doc_id)).values_list("hospital__hospital_name")
+        doctor_referred = str(request.GET.get("refdoc",""))
+
+    doc_details = UserMasters.objects.filter(user_id=str(doc_id)).values_list("hospital__hospital_name","country")
+    print doc_details
+    sms_details=AppConfiguration.objects.filter(country_name=doc_details[0][1]).values_list("phone_number_length","rapidpro_auth_token")
+    print sms_details
+    print "++++++++++++++++++++++++"
+    refered_doc_ph = UserMasters.objects.filter(user_id=str(doctor_referred)).values_list("phone_number")
     doc_hospital = str(doc_details[0][0]).replace(" (PHC)","")
     hospital_details = HealthCenters.objects.filter(hospital_name=doc_hospital).values_list("hospital_type")
+    transfered_hospital={}
+    print hospital_details[0][0]
     if str(hospital_details[0][0])=="PHC":
         level = 2
         location = str(HealthCenters.objects.filter(hospital_name=str(doc_hospital),hospital_type='PHC').values_list("parent_hospital")[0][0])
         doctor_details = UserMasters.objects.filter(hospital__hospital_name=str(location)).values_list("name","phone_number","country__country_name")
-        for doctor in doctor_details:
-            country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
-            doctor_phone=country_code+str(doctor[1])[-int(settings.PHONE_NUMBER_LENGTH):]
+        if str(doctor_referred)=="null":
+            print doctor_details,"deails"
+            for doctor in doctor_details:
+                print doctor
+                country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
+                doctor_phone=country_code+str(doctor[1])[-int(sms_details[0][0]):]
+                msg = "Dear Doctor, %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+                doc_sms = anmsms(workerph=doctor_phone,worker_sms=msg,auth_token=str(sms_details[0][1]))
+            update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
+            transfered_hospital["hospital"]=location
+            return HttpResponse(json.dumps(transfered_hospital))
+        else:
+            print "else"
+            country_code=str(CountryTb.objects.filter(country_name=str(doctor_details[0][2])).values_list("country_code")[0][0])
+            doctor_phone=country_code+str(refered_doc_ph[0][0])[-int(sms_details[0][0]):]
+            print doctor_phone,"ph"
+            # pront
             msg = "Dear Doctor, %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
-            doc_sms,junk_sms = docsms(workerph=doctor_phone,worker_sms=msg)
-        update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
+            doc_sms = anmsms(workerph=doctor_phone,worker_sms=msg,auth_token=str(sms_details[0][1]))
+            print level,"level"
+            pending_status="Patient refered by %s Doctor" %str(doc_id)
+            print PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)),"filter"
+            update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),docid=str(doctor_referred),phc=str(location),timestamp=datetime.now(),pending =pending_status)
+            transfered_hospital["hospital"]=doctor_referred
+            return HttpResponse(json.dumps(transfered_hospital))
     elif str(hospital_details[0][0])=="SubDistrict":
         level = 3
         location = HealthCenters.objects.filter(hospital_name=str(doc_details[0][0]),hospital_type='SubDistrict').values_list("parent_hospital")[0][0]
         doctor_details = UserMasters.objects.filter(hospital__hospital_name=str(location)).values_list("name","phone_number","country__country_name")
-        for doctor in doctor_details:
-            country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
-            doctor_phone=country_code+str(doctor[1])[-int(settings.PHONE_NUMBER_LENGTH):]
-            msg = "Dear %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
-            doc_sms,junk_sms = docsms(workerph=doctor_phone,worker_sms=msg)
-        update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
+        if str(doctor_referred)=="null":
+            for doctor in doctor_details:
+                country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
+                doctor_phone=country_code+str(doctor[1])[-int(sms_details[0][0]):]
+                msg = "Dear %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+                doc_sms= anmsms(workerph=doctor_phone,worker_sms=msg,auth_token=str(sms_details[0][1]))
+            update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
+            transfered_hospital["hospital"]=location
+            return HttpResponse(json.dumps(transfered_hospital))
+        else:
+            country_code=str(CountryTb.objects.filter(country_name=str(doctor_details[0][2])).values_list("country_code")[0][0])
+            doctor_phone=country_code+str(refered_doc_ph[0][0])[-int(sms_details[0][0]):]
+            msg = "Dear Doctor, %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+            pending_status="Patient refered by %s Doctor" %str(doc_id)
+            doc_sms = anmsms(workerph=doctor_phone,worker_sms=msg,auth_token=str(sms_details[0][1]))
+            update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),docid=str(doctor_referred),phc=str(location),timestamp=datetime.now(),pending=pending_status)
+            transfered_hospital["hospital"]=doctor_referred
+            return HttpResponse(json.dumps(transfered_hospital))
     elif str(hospital_details[0][0])=="District":
         level = 4
         location = HealthCenters.objects.filter(hospital_name=str(doc_details[0][0]),hospital_type='District').values_list("parent_hospital")[0][0]
         doctor_details = UserMasters.objects.filter(hospital__hospital_name=str(location)).values_list("name","phone_number","country__country_name")
-        for doctor in doctor_details:
-            country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
-            doctor_phone=country_code+str(doctor[1])[-int(settings.PHONE_NUMBER_LENGTH):]
-            msg = "Dear %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
-            doc_sms,junk_sms = docsms(workerph=doctor_phone,worker_sms=msg)
-        update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
+        if str(doctor_referred)=="null":
+            for doctor in doctor_details:
+                country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
+                doctor_phone=country_code+str(doctor[1])[-int(sms_details[0][0]):]
+                msg = "Dear %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+                doc_sms= anmsms(workerph=doctor_phone,worker_sms=msg,auth_token=str(sms_details[0][1]))
+            update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
+            transfered_hospital["hospital"]=location
+            return HttpResponse(json.dumps(transfered_hospital))
+        else:
+            country_code=str(CountryTb.objects.filter(country_name=str(doctor_details[0][2])).values_list("country_code")[0][0])
+            doctor_phone=country_code+str(refered_doc_ph[0][0])[-int(sms_details[0][0]):]
+            msg = "Dear Doctor, %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+            pending_status="Patient refered by %s Doctor" %str(doc_id)
+            doc_sms = anmsms(workerph=doctor_phone,worker_sms=msg,auth_token=str(sms_details[0][1]))
+            update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),docid=str(doctor_referred),timestamp=datetime.now(),phc=str(location),pending=pending_status)
+            transfered_hospital["hospital"]=doctor_referred
+            return HttpResponse(json.dumps(transfered_hospital))
     elif str(hospital_details[0][0])=="County":
         level = 2
         location = HealthCenters.objects.filter(hospital_name=str(doc_details[0][0]),hospital_type='County').values_list("parent_hospital")[0][0]
         doctor_details = UserMasters.objects.filter(hospital__hospital_name=str(location)).values_list("name","phone_number","country__country_name")
-        for doctor in doctor_details:
-            country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
-            doctor_phone=country_code+str(doctor[1])[-int(settings.PHONE_NUMBER_LENGTH):]
-            msg = "Dear %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
-            doc_sms,junk_sms = docsms(workerph=doctor_phone,worker_sms=msg)
-        update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
+        if str(doctor_referred)=="null":
+            for doctor in doctor_details:
+                country_code=str(CountryTb.objects.filter(country_name=str(doctor[2])).values_list("country_code")[0][0])
+                doctor_phone=country_code+str(doctor[1])[-int(sms_details[0][0]):]
+                msg = "Dear %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+                doc_sms= anmsms(workerph=doctor_phone,worker_sms=msg,auth_token=str(sms_details[0][1]))
+            update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),phc=str(location),timestamp=datetime.now())
 
-    return HttpResponse('Level upgraded')
+            transfered_hospital["hospital"]=location
+            return HttpResponse(json.dumps(transfered_hospital))
+        else:
+            country_code=str(CountryTb.objects.filter(country_name=str(doctor_details[0][2])).values_list("country_code")[0][0])
+            doctor_phone=country_code+str(refered_doc_ph[0][0])[-int(sms_details[0][0]):]
+            msg = "Dear Doctor, %s has been referred to you for Doctor Consultation for ANC/PNC/Child Visit" %patientname
+            pending_status="Patient refered by %s Doctor" %str(doc_id)
+            doc_sms = anmsms(workerph=doctor_phone,worker_sms=msg,auth_token=str(sms_details[0][1]))
+            update_level = PocInfo.objects.filter(visitentityid=str(visitid),entityidec=str(entityid)).update(level=str(level),docid=str(doctor_referred),timestamp=datetime.now(),phc=str(location),pending=pending_status)
+            transfered_hospital["hospital"]=doctor_referred
+            return HttpResponse(json.dumps(transfered_hospital))
 
 def sendsms(request):
+    print request.method,"child"
     if request.method == "GET":
         phone_num = request.GET.get("tel","")
         msg = str(request.GET.get("message",""))
+    print phone_num,msg,"child"
+    phone_num='"'+phone_num[6:-1] 
     sms_var = '{"phone":'+str(phone_num)+', "text":' +msg+'}'
-    sms_curl= 'curl -i -H "Authorization: Token 78ffc91c6a5287d7cc7a9a68c4903cc61d87aecb" -H "Content-type: application/json"  -H "Accept: application/json" POST -d'+ "'"+sms_var+"'"+' http://202.153.34.174/api/v1/messages.json '
+    sms_curl= 'curl -i -H "Authorization: Token 3a14ab421e6b717e1f7a90a779415efea426c565" -H "Content-type: application/json"  -H "Accept: application/json" POST -d'+ "'"+sms_var+"'"+' http://202.153.34.174/api/v1/messages.json '
+    print sms_curl,"reg"
     sms_output = commands.getoutput(sms_curl)
     return HttpResponse('SMS sent')
 
@@ -1516,7 +1661,7 @@ def docoverview(request):
     overview_visit_output = commands.getoutput(overview_visit_curl)
     overview_visit_details = json.loads(overview_visit_output)
     overview_visit_data = overview_visit_details["rows"]
-    #print overview_visit_data
+    print overview_visit_data
     for event in overview_visit_data:
         overview_events = {}
         if str(event['value'][0]) == 'pnc_visit' or str(event['value'][0]) == 'pnc_visit_edit':
@@ -1579,7 +1724,7 @@ def docoverview(request):
         elif str(event['value'][0]) == 'child_illness' or str(event['value'][0]) == 'child_illness_edit':
 
             child_tags = ["dateOfBirth","childSigns","childSignsOther","immediateReferral","immediateReferralReason","reportChildDisease","reportChildDiseaseOther",
-                        "reportChildDiseaseDate","reportChildDiseasePlace","numberOfORSGiven","childReferral","anmPoc","isHighRisk","submissionDate","id","docPocInfo"]
+                        "reportChildDiseaseDate","reportChildDiseasePlace","numberOfORSGiven","childReferral","anmPoc","isHighRisk","submissionDate","id","docPocInfo","childTemperature"]
             f = lambda x: x[0].get("value") if len(x)>0 else ""
             fetched_dict = copyf(event["value"][1]["form"]["fields"],"name",child_tags)
             overview_events["dateOfBirth"]=f(copyf(fetched_dict,"name","dateOfBirth"))
@@ -1593,6 +1738,7 @@ def docoverview(request):
             overview_events["reportChildDiseasePlace"]=f(copyf(fetched_dict,"name","reportChildDiseasePlace"))
             overview_events["numberOfORSGiven"]=f(copyf(fetched_dict,"name","numberOfORSGiven"))
             overview_events["childReferral"]=f(copyf(fetched_dict,"name","childReferral"))
+            overview_events["childTemperature"]=f(copyf(fetched_dict,"name","childTemperature"))
             overview_events["anmPoc"]=f(copyf(fetched_dict,"name","anmPoc"))
             overview_events["isHighRisk"]=f(copyf(fetched_dict,"name","isHighRisk"))
             overview_events["visitDate"]=f(copyf(fetched_dict,"name","submissionDate"))
@@ -1628,9 +1774,18 @@ def mortalityreport(anmid):
     current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
     month = current_date.split("-")[1]
     year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target_mortality = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target_mortality))
+    mortality_annual_target = cur.fetchall()
+    mortality_annual_target=dict(mortality_annual_target)
     total_mortality_report={"name":"Total Mother Mortality","month":0,"year":0,"annual_target":0,"percentage":0}
     mother_mortality_anc_report={"name":"Mother mortality(during ANC)","month":0,"year":0,"annual_target":0,"percentage":0}
     mother_mortality_delivery_report={"name":"Mother mortality(during Delivery)","month":0,"year":0,"annual_target":0,"percentage":0}
+    # my_dict.setdefault("b",0)
+    total_mortality_report["annual_target"]=mortality_annual_target.setdefault("total_mother_mortality",1000)
+    mother_mortality_delivery_report["annual_target"] = mortality_annual_target.setdefault("anctopnc_MaternalDeath",1000)
+    mother_mortality_anc_report["annual_target"] = mortality_annual_target.setdefault("anc_MaternalDeath",1000)
     mortality_report=[]
     for mortality in mortality_details:
         visit_date = mortality[-6]
@@ -1673,6 +1828,12 @@ def childreport(anmid):
     current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
     month = current_date.split("-")[1]
     year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target_child = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target_child))
+    child_annual_target = cur.fetchall()
+    child_annual_target=dict(child_annual_target)
+    print child_annual_target
     bcg_report={"name":"BCG","month":0,"year":0,"annual_target":0,"percentage":0}
     opv_report={"name":"OPV","month":0,"year":0,"annual_target":0,"percentage":0}
     pentavalent_report={"name":"PENTAVALENT 1","month":0,"year":0,"annual_target":0,"percentage":0}
@@ -1686,6 +1847,18 @@ def childreport(anmid):
     low_weight_report={"name":"Low birth weight","month":0,"year":0,"annual_target":0,"percentage":0}
     weighed_report={"name":"Number of infants weighed at birth","month":0,"year":0,"annual_target":0,"percentage":0}
     child_report=[]
+    bcg_report["annual_target"]=child_annual_target.setdefault("bcg",1000)
+    opv_report["annual_target"]=child_annual_target.setdefault("opv",1000)
+    pentavalent_report["annual_target"]=child_annual_target.setdefault("pentavalent",1000)
+    age_1_report["annual_target"]=child_annual_target.setdefault("child_0_1",1000)
+    age_5_report["annual_target"]=child_annual_target.setdefault("child_0_5",1000)
+    diarrhea_report["annual_target"]=child_annual_target.setdefault("diarrhea",1000)
+    bf_report["annual_target"]=child_annual_target.setdefault("bf",1000)
+    hep_report["annual_target"]=child_annual_target.setdefault("hep",1000)
+    infant_balance_report["annual_target"]=child_annual_target.setdefault("infant_balance",1000)
+    child_oa_report["annual_target"]=child_annual_target.setdefault("infant_balance_oa",1000)
+    low_weight_report["annual_target"]=child_annual_target.setdefault("low_birth_weight",1000)
+    weighed_report["annual_target"]=child_annual_target.setdefault("child_weighed",1000)
     for child in child_details:
         visit_date = child[-6]
         visit_month = visit_date.split("-")[1]
@@ -1783,6 +1956,15 @@ def fpreport(anmid):
     current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
     month = current_date.split("-")[1]
     year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target))
+    fp_annual_target = cur.fetchall()
+    fp_annual_target=dict(fp_annual_target)
+    condom_report["annual_target"]= fp_annual_target.setdefault("condom_usage",1000)
+    condom_pieces_report["annual_target"]= fp_annual_target.setdefault("condom_pieces",1000)
+    iud_report["annual_target"]= fp_annual_target.setdefault("iud_adoption",1000)
+    oral_pills_report["annual_target"]= fp_annual_target.setdefault("oral_pills",1000)
     for fp in fp_details:
         fp_date = fp[8]
         fp_month = fp_date.split("-")[1]
@@ -1824,10 +2006,18 @@ def deliveryreport(anmid):
     current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
     month = current_date.split("-")[1]
     year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target_delivery = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target_delivery))
+    delivery_annual_target = cur.fetchall()
+    delivery_annual_target=dict(delivery_annual_target)
+    cesarean_report["annual_target"]=delivery_annual_target.setdefault("cesareans",1000)
+    cesarean_gov_report["annual_target"]=delivery_annual_target.setdefault("cesareans_gh",1000)
+    dhc_report["annual_target"]=delivery_annual_target.setdefault("dh",1000)
+    chc_report["annual_target"]=delivery_annual_target.setdefault("chc",1000)
+    pnc_total_report["annual_target"]=delivery_annual_target.setdefault("total_deliveries",1000)
     for pnc in pnc_details:
-        print pnc
         pnc_date = pnc[-1]
-        print pnc_date
         pnc_month = pnc_date.split("-")[1]
         pnc_year = pnc_date.split("-")[0]
         if pnc_year == year and pnc_month ==month :
@@ -1868,6 +2058,18 @@ def anc_report(anmid):
     anc_early_reg_report={"name":"Early ANC Registration","month":0,"year":0,"annual_target":0,"percentage":0}
     tt2_report={"name":"TT2 and TT Booster(Pregnant women)","month":0,"year":0,"annual_target":0,"percentage":0}
     tt1_report={"name":"TT1","month":0,"year":0,"annual_target":0,"percentage":0}
+    current_date=datetime.strftime(datetime.now(),'%Y-%m-%d')
+    month = current_date.split("-")[1]
+    year = current_date.split("-")[0]
+    anm = UserMasters.objects.filter(user_id=anmid).values_list('id')[0][0]
+    query_annual_target_anc = "SELECT indicators,target FROM annual_target WHERE anm = '%d' and year='%d';" %(anm,int(year))
+    cur.execute(str(query_annual_target_anc))
+    anc_annual_target = cur.fetchall()
+    anc_annual_target=dict(anc_annual_target)
+    anc_late_reg_report["annual_target"]=anc_annual_target.setdefault("late_anc_registrations",1000)
+    anc_early_reg_report["annual_target"]=anc_annual_target.setdefault("early_anc_registrations",1000)
+    tt2_report["annual_target"]=anc_annual_target.setdefault("tt2_booster",1000)
+    tt1_report["annual_target"]=anc_annual_target.setdefault("tt1",1000)
     for anc in anc_details:
         anc_date = anc[8]
         if anc[5] == "anc":
