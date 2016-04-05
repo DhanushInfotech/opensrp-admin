@@ -12,6 +12,14 @@ from django.contrib.admin.templatetags.admin_modify import submit_row as origina
 from django.http import HttpResponseRedirect
 from django.utils.encoding import force_unicode
 
+# @register.inclusion_tag('admin/submit_line.html', takes_context=True)
+# def submit_row(context):
+#     ctx = original_submit_row(context)
+#     ctx.update({
+#         'show_save_and_add_another': context.get('show_save_and_add_another', ctx['show_save_and_add_another']),
+#         })
+#     return ctx
+
 class DrugInfoAdmin(admin.ModelAdmin):
     list_display= ('drug_name','frequency','dosage','direction','active',)
     search_fields = ('drug_name',)
@@ -226,7 +234,7 @@ class HealthCenterAdmin(admin.ModelAdmin):
         urls = super(HealthCenterAdmin, self).get_urls()
         my_urls = patterns('',
                 url(r'add/$', 'Masters.views.admin_hospital',name='hospital'),
-                #url(r'gettype/$', 'Masters.views.get_hospital',name='hospital'),
+                url(r'gettype/$', 'Masters.views.get_hospital',name='hospital'),
                 url(r'(?P<hospital_id>\d+)/$', 'Masters.views.edit_hospital',name='edithospital'),
                 )
         return my_urls + urls
@@ -244,7 +252,7 @@ class AppConfigurationAdmin(admin.ModelAdmin):
     search_fields = ('wife_age_min',)
     fieldsets = (
       (None, {
-          'fields': ('country_name','temperature_units','escalation_schedule','is_highrisk', "phone_number_length", "rapidpro_auth_token")
+          'fields': ('country_name','temperature_units','escalation_schedule','is_highrisk')
       }),
       ('Wife age', {
           'fields': ('wife_age_min','wife_age_max')
@@ -275,18 +283,6 @@ class FormFieldsAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-class AnnualTargetAdmin(admin.ModelAdmin):
-    list_display = ('anm','indicators','target','year',)
-    search_fields = ('anm', )
-    list_filter = ('indicators',)
-
-    def get_actions(self, request):
-        actions = super(AnnualTargetAdmin, self).get_actions(request)
-        del actions['delete_selected']
-        return actions
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 admin.site.register(DrugInfo,DrugInfoAdmin)
 admin.site.register(Frequency,FrequencyAdmin)
@@ -304,4 +300,3 @@ admin.site.register(LocationTab,LocationTabAdmin)
 admin.site.register(HealthCenters,HealthCenterAdmin)
 admin.site.register(AppConfiguration,AppConfigurationAdmin)
 admin.site.register(FormFields,FormFieldsAdmin)
-admin.site.register(AnnualTarget,AnnualTargetAdmin)
